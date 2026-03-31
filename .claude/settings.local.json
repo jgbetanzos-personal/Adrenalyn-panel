@@ -5,7 +5,9 @@
       "Bash(python3 -c \":*)",
       "Bash(pip3 install:*)",
       "Read(//Users/jorgegarciabetanzos/Documents/Projects/**)",
-      "Bash(npx create-next-app@latest adrenalyn-panel --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --yes)"
+      "Bash(npx create-next-app@latest adrenalyn-panel --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --yes)",
+      "Bash(npm install:*)",
+      "Bash(npx shadcn@latest init --defaults -y)"
     ]
   }
 }
