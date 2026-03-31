@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//private/tmp/**)",
+      "Bash(python3 -c \":*)",
+      "Bash(pip3 install:*)",
+      "Read(//Users/jorgegarciabetanzos/Documents/Projects/**)",
+      "Bash(npx create-next-app@latest adrenalyn-panel --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --yes)"
+    ]
+  }
+}
