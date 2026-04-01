@@ -33,6 +33,7 @@ export interface Card {
   position: Position
   type: CardType
   collected: boolean
+  repeated: boolean
   is_plus: boolean      // true = PLUS TIENES section (479+)
 }
 

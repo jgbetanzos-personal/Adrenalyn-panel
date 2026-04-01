@@ -1,17 +1,15 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { Search, SlidersHorizontal } from 'lucide-react'
+import { useState, useMemo, useTransition } from 'react'
+import { Search, CheckCheck, X } from 'lucide-react'
 import { CardItem } from '@/components/card-item'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import { TYPE_CONFIG } from '@/components/type-label'
+import { TeamBadge } from '@/components/team-badge'
 import type { Card, CardType } from '@/lib/types'
 
-// ─── Grupos y su orden de presentación ────────────────────────────────────────
-
 const SECTIONS = [
-  // Regular por equipo
   'D. Alavés', 'Athletic Club', 'Atlético de Madrid', 'FC Barcelona',
   'Real Betis', 'RC Celta', 'Elche CF', 'RCD Espanyol',
   'Getafe CF', 'Girona FC', 'Levante UD', 'Real Madrid',
@@ -30,13 +28,10 @@ const PLUS_TYPES: CardType[] = [
   'NUEVO_PROTA', 'NUEVO_SUPER_CRACK', 'ESPECIAL_AUTOGRAFO',
 ]
 
-type FilterMode = 'all' | 'missing' | 'collected'
+type FilterMode = 'all' | 'missing' | 'collected' | 'repeated'
 
-interface Props {
-  initialCards: Card[]
-}
-
-export function CollectionClient({ initialCards }: Props) {
+export function CollectionClient({ initialCards }: { initialCards: Card[] }) {
+  const [cards, setCards] = useState(initialCards)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterMode>('all')
   const [showBis, setShowBis] = useState(true)
@@ -44,49 +39,41 @@ export function CollectionClient({ initialCards }: Props) {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
-    return initialCards.filter((c) => {
-      if (filter === 'missing' && c.collected) return false
+    return cards.filter((c) => {
+      if (filter === 'missing'   && c.collected) return false
       if (filter === 'collected' && !c.collected) return false
-      if (!showBis && c.type === 'BIS') return false
+      if (filter === 'repeated'  && !c.repeated) return false
+      if (!showBis  && c.type === 'BIS') return false
       if (!showPlus && c.is_plus) return false
       if (q && !c.name.toLowerCase().includes(q) && !c.team.toLowerCase().includes(q) && !c.number.includes(q)) return false
       return true
     })
-  }, [initialCards, search, filter, showBis, showPlus])
+  }, [cards, search, filter, showBis, showPlus])
 
-  function sectionCards(teamOrType: string, isType = false) {
-    if (isType) {
-      return filtered.filter((c) => c.type === teamOrType)
-    }
-    return filtered.filter((c) => c.team === teamOrType && (c.type === 'REGULAR' || c.type === 'ESCUDO'))
+  // Called by TeamSection after a bulk toggle
+  function onBulkUpdate(ids: number[], collected: boolean) {
+    setCards(prev => prev.map(c => ids.includes(c.id) ? { ...c, collected } : c))
   }
 
-  function typeCards(type: CardType) {
-    return filtered.filter((c) => c.type === type)
+  function sectionProgress(sectionCards: Card[]) {
+    const collected = sectionCards.filter(c => c.collected).length
+    const total     = sectionCards.length
+    return { collected, total, pct: total > 0 ? Math.round((collected / total) * 100) : 0 }
   }
 
-  function sectionProgress(cards: Card[]) {
-    if (!cards.length) return { collected: 0, total: 0, pct: 0 }
-    const collected = cards.filter((c) => c.collected).length
-    const total = cards.length
-    return { collected, total, pct: Math.round((collected / total) * 100) }
-  }
-
-  const bisCards = filtered.filter((c) => c.type === 'BIS')
+  const totalRepeated = cards.filter(c => c.repeated).length
 
   return (
     <div className="space-y-6 max-w-6xl">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Colección</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          {filtered.length} cromos · haz clic para marcar como conseguido
+          {filtered.length} cromos · {totalRepeated > 0 && <span className="text-purple-600 font-medium">{totalRepeated} repetidos</span>}
         </p>
       </div>
 
       {/* Controles */}
       <div className="flex flex-col sm:flex-row gap-3">
-        {/* Búsqueda */}
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
@@ -98,22 +85,27 @@ export function CollectionClient({ initialCards }: Props) {
           />
         </div>
 
-        {/* Filtro conseguidos */}
         <div className="flex rounded-lg border overflow-hidden text-sm">
-          {(['all', 'missing', 'collected'] as FilterMode[]).map((m) => (
+          {([
+            ['all',       'Todos'],
+            ['missing',   'Faltan'],
+            ['collected', 'Conseguidos'],
+            ['repeated',  'Repetidos'],
+          ] as [FilterMode, string][]).map(([m, label]) => (
             <button
               key={m}
               onClick={() => setFilter(m)}
               className={`px-3 py-2 transition-colors ${
-                filter === m ? 'bg-orange-500 text-white' : 'hover:bg-muted'
+                filter === m
+                  ? m === 'repeated' ? 'bg-purple-500 text-white' : 'bg-orange-500 text-white'
+                  : 'hover:bg-muted'
               }`}
             >
-              {m === 'all' ? 'Todos' : m === 'missing' ? 'Faltan' : 'Conseguidos'}
+              {label}
             </button>
           ))}
         </div>
 
-        {/* Toggles */}
         <div className="flex items-center gap-3 text-sm">
           <label className="flex items-center gap-1.5 cursor-pointer">
             <input type="checkbox" checked={showBis} onChange={(e) => setShowBis(e.target.checked)} className="accent-orange-500" />
@@ -126,63 +118,89 @@ export function CollectionClient({ initialCards }: Props) {
         </div>
       </div>
 
-      {/* ── Cromos regulares por equipo ───────────────────────────────────────── */}
+      {/* Regulares por equipo */}
       <SectionBlock title="Cromos Regulares por Equipo">
         {SECTIONS.map((team) => {
-          const cards = sectionCards(team)
-          if (!cards.length) return null
-          const prog = sectionProgress(cards)
+          const teamCards = filtered.filter(c => c.team === team && (c.type === 'REGULAR' || c.type === 'ESCUDO'))
+          if (!teamCards.length) return null
           return (
-            <TeamSection key={team} team={team} cards={cards} prog={prog} />
+            <TeamSection
+              key={team}
+              title={team}
+              cards={teamCards}
+              prog={sectionProgress(teamCards)}
+              showTeamBadge
+              allCardsForTeam={cards.filter(c => c.team === team && (c.type === 'REGULAR' || c.type === 'ESCUDO'))}
+              onBulkUpdate={onBulkUpdate}
+            />
           )
         })}
       </SectionBlock>
 
       <Separator />
 
-      {/* ── Especiales Trading Card Game ──────────────────────────────────────── */}
+      {/* Trading Card Game */}
       <SectionBlock title="Trading Card Game">
         {SPECIAL_TYPES.map((type) => {
-          const cards = typeCards(type)
-          if (!cards.length) return null
-          const prog = sectionProgress(cards)
+          const typeCards = filtered.filter(c => c.type === type)
+          if (!typeCards.length) return null
           const cfg = TYPE_CONFIG[type]
           return (
-            <TeamSection key={type} team={cfg?.label ?? type} cards={cards} prog={prog} colorClass={cfg?.color} />
+            <TeamSection
+              key={type}
+              title={cfg?.label ?? type}
+              cards={typeCards}
+              prog={sectionProgress(typeCards)}
+              colorClass={cfg?.color}
+              allCardsForTeam={cards.filter(c => c.type === type)}
+              onBulkUpdate={onBulkUpdate}
+            />
           )
         })}
       </SectionBlock>
 
       <Separator />
 
-      {/* ── BIS ───────────────────────────────────────────────────────────────── */}
-      {showBis && bisCards.length > 0 && (
-        <>
-          <SectionBlock title="Cards BIS (Stadium Cards)">
-            {/* Agrupamos BIS por equipo */}
-            {SECTIONS.map((team) => {
-              const cards = bisCards.filter((c) => c.team === team)
-              if (!cards.length) return null
-              const prog = sectionProgress(cards)
-              return (
-                <TeamSection key={team} team={`${team} BIS`} cards={cards} prog={prog} />
-              )
-            })}
-          </SectionBlock>
-          <Separator />
-        </>
+      {/* BIS */}
+      {showBis && (
+        <SectionBlock title="Cards BIS (Stadium Cards)">
+          {SECTIONS.map((team) => {
+            const bisCards = filtered.filter(c => c.team === team && c.type === 'BIS')
+            if (!bisCards.length) return null
+            return (
+              <TeamSection
+                key={team}
+                title={`${team} BIS`}
+                cards={bisCards}
+                prog={sectionProgress(bisCards)}
+                showTeamBadge
+                allCardsForTeam={cards.filter(c => c.team === team && c.type === 'BIS')}
+                onBulkUpdate={onBulkUpdate}
+              />
+            )
+          })}
+        </SectionBlock>
       )}
 
-      {/* ── Plus Tienes ───────────────────────────────────────────────────────── */}
+      <Separator />
+
+      {/* Plus Tienes */}
       {showPlus && (
         <SectionBlock title="Plus Tienes (99 nuevas cards)">
           {PLUS_TYPES.map((type) => {
-            const cards = typeCards(type)
-            if (!cards.length) return null
-            const prog = sectionProgress(cards)
+            const typeCards = filtered.filter(c => c.type === type)
+            if (!typeCards.length) return null
             const cfg = TYPE_CONFIG[type]
             return (
-              <TeamSection key={type} team={cfg?.label ?? type} cards={cards} prog={prog} colorClass={cfg?.color} />
+              <TeamSection
+                key={type}
+                title={cfg?.label ?? type}
+                cards={typeCards}
+                prog={sectionProgress(typeCards)}
+                colorClass={cfg?.color}
+                allCardsForTeam={cards.filter(c => c.type === type)}
+                onBulkUpdate={onBulkUpdate}
+              />
             )
           })}
         </SectionBlock>
@@ -191,53 +209,100 @@ export function CollectionClient({ initialCards }: Props) {
   )
 }
 
-// ─── Bloque de sección ────────────────────────────────────────────────────────
-
 function SectionBlock({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">{title}</h2>
-      <div className="space-y-4">{children}</div>
+      <div className="space-y-3">{children}</div>
     </div>
   )
 }
 
-// ─── Sección de equipo / tipo ─────────────────────────────────────────────────
-
 function TeamSection({
-  team, cards, prog, colorClass,
+  title, cards, prog, colorClass, showTeamBadge = false,
+  allCardsForTeam, onBulkUpdate,
 }: {
-  team: string
+  title: string
   cards: Card[]
   prog: { collected: number; total: number; pct: number }
   colorClass?: string
+  showTeamBadge?: boolean
+  allCardsForTeam: Card[]
+  onBulkUpdate: (ids: number[], collected: boolean) => void
 }) {
   const [open, setOpen] = useState(true)
+  const [pending, startTransition] = useTransition()
+
+  const allCollected = allCardsForTeam.every(c => c.collected)
+
+  function bulkToggle(e: React.MouseEvent) {
+    e.stopPropagation()
+    const targetState = !allCollected
+    const ids = allCardsForTeam.map(c => c.id)
+    startTransition(async () => {
+      const res = await fetch('/api/cards/bulk', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, collected: targetState }),
+      })
+      if (res.ok) onBulkUpdate(ids, targetState)
+    })
+  }
+
+  // Extract team name for badge (strip " BIS" suffix if present)
+  const teamName = title.replace(/ BIS$/, '')
 
   return (
     <div className="rounded-xl border overflow-hidden">
-      {/* Header */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-3 px-4 py-3 bg-muted/40 hover:bg-muted/60 transition-colors text-left"
-      >
+      <div className="w-full flex items-center gap-3 px-4 py-3 bg-muted/40 hover:bg-muted/60 transition-colors">
+        {/* Badge equipo */}
+        {showTeamBadge && <TeamBadge team={teamName} size="sm" />}
+
+        {/* Contador */}
         <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colorClass ?? 'bg-slate-100 text-slate-700'}`}>
           {prog.collected}/{prog.total}
         </span>
-        <span className="font-medium text-sm flex-1">{team}</span>
+
+        {/* Título (clickable para colapsar) */}
+        <button
+          onClick={() => setOpen(v => !v)}
+          className="font-medium text-sm flex-1 text-left"
+        >
+          {title}
+        </button>
+
+        {/* Progress + % */}
         <div className="flex items-center gap-2 shrink-0">
           <Progress value={prog.pct} className="w-20 h-1.5" />
           <span className="text-xs text-muted-foreground w-8 text-right">{prog.pct}%</span>
-          <span className="text-muted-foreground text-xs">{open ? '▲' : '▼'}</span>
         </div>
-      </button>
 
-      {/* Grid de cromos */}
+        {/* Select all / deselect all */}
+        <button
+          onClick={bulkToggle}
+          disabled={pending}
+          title={allCollected ? 'Desmarcar todos' : 'Marcar todos como conseguidos'}
+          className={`
+            shrink-0 flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors cursor-pointer
+            ${allCollected
+              ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+              : 'bg-muted text-muted-foreground hover:bg-orange-100 hover:text-orange-700'}
+            ${pending ? 'opacity-50' : ''}
+          `}
+        >
+          {allCollected ? <X className="w-3 h-3" /> : <CheckCheck className="w-3 h-3" />}
+          <span className="hidden sm:inline">{allCollected ? 'Desmarcar' : 'Todos'}</span>
+        </button>
+
+        {/* Colapsar */}
+        <button onClick={() => setOpen(v => !v)} className="text-muted-foreground text-xs cursor-pointer">
+          {open ? '▲' : '▼'}
+        </button>
+      </div>
+
       {open && (
         <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-          {cards.map((c) => (
-            <CardItem key={c.id} card={c} />
-          ))}
+          {cards.map((c) => <CardItem key={c.id} card={c} />)}
         </div>
       )}
     </div>

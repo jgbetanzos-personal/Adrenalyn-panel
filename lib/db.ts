@@ -22,8 +22,13 @@ export async function initDb() {
       position  TEXT NOT NULL DEFAULT '-',
       type      TEXT NOT NULL,
       collected BOOLEAN NOT NULL DEFAULT FALSE,
+      repeated  BOOLEAN NOT NULL DEFAULT FALSE,
       is_plus   BOOLEAN NOT NULL DEFAULT FALSE
     )
+  `
+  // Migration: add repeated column if it doesn't exist yet
+  await db`
+    ALTER TABLE cards ADD COLUMN IF NOT EXISTS repeated BOOLEAN NOT NULL DEFAULT FALSE
   `
 
   const [{ count }] = await db`SELECT COUNT(*)::int AS count FROM cards`
@@ -69,12 +74,22 @@ export async function getAllCards(): Promise<Card[]> {
   return rows.map(toCard)
 }
 
-export async function toggleCard(id: number): Promise<Card> {
+export async function toggleCard(id: number, field: 'collected' | 'repeated' = 'collected'): Promise<Card> {
   await initDb()
   const db = sql()
-  await db`UPDATE cards SET collected = NOT collected WHERE id = ${id}`
+  if (field === 'repeated') {
+    await db`UPDATE cards SET repeated = NOT repeated WHERE id = ${id}`
+  } else {
+    await db`UPDATE cards SET collected = NOT collected WHERE id = ${id}`
+  }
   const [row] = await db`SELECT * FROM cards WHERE id = ${id}`
   return toCard(row)
+}
+
+export async function bulkSetCollected(ids: number[], collected: boolean): Promise<void> {
+  await initDb()
+  const db = sql()
+  await db`UPDATE cards SET collected = ${collected} WHERE id = ANY(${ids}::int[])`
 }
 
 export async function getStats() {
@@ -112,6 +127,7 @@ function toCard(row: any): Card {
     id:        row.id,
     number:    row.number,
     name:      row.name,
+    repeated:  row.repeated === true || row.repeated === 1,
     team:      row.team,
     position:  row.position as Position,
     type:      row.type as CardType,

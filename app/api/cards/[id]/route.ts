@@ -4,7 +4,7 @@ import { toggleCard } from '@/lib/db'
 export const dynamic = 'force-dynamic'
 
 export async function PATCH(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
@@ -12,8 +12,10 @@ export async function PATCH(
   if (isNaN(numId)) {
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
   }
+  const body = await req.json().catch(() => ({}))
+  const field = body?.field === 'repeated' ? 'repeated' : 'collected'
   try {
-    const card = await toggleCard(numId)
+    const card = await toggleCard(numId, field)
     return NextResponse.json(card)
   } catch (err) {
     console.error(err)
