@@ -13,7 +13,14 @@
       "Bash(curl -s http://localhost:3000/api/stats)",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f''''Total: {d[\"\"total\"\"]}, Collected: {d[\"\"collected\"\"]}, Types: {len\\(d[\"\"byType\"\"]\\)}, Teams: {len\\(d[\"\"byTeam\"\"]\\)}''''\\)\")",
       "Bash(git config:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(node -e \":*)",
+      "Bash(npx tsx -e \":*)",
+      "Bash(echo $PATH)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f''''Total cards en BD: {d[\"\"total\"\"]}''''\\)\")",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(export PATH=\"/Users/jorgegarciabetanzos/.nvm/versions/node/v20.20.2/bin:$PATH\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/seed)"
     ]
   }
 }

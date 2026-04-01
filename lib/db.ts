@@ -34,10 +34,28 @@ export async function initDb() {
 
 async function seedData() {
   const db = sql()
-  for (const c of ALL_CARDS) {
+  // Neon HTTP driver: insert in batches of 100 rows per query to stay within limits
+  const BATCH = 100
+  for (let i = 0; i < ALL_CARDS.length; i += BATCH) {
+    const batch = ALL_CARDS.slice(i, i + BATCH)
+    // Build a single multi-row INSERT using neon tagged template + unnest trick
+    const numbers   = batch.map(c => c.number)
+    const names     = batch.map(c => c.name)
+    const teams     = batch.map(c => c.team)
+    const positions = batch.map(c => c.position)
+    const types     = batch.map(c => c.type)
+    const isPlus    = batch.map(c => c.is_plus)
     await db`
       INSERT INTO cards (number, name, team, position, type, collected, is_plus)
-      VALUES (${c.number}, ${c.name}, ${c.team}, ${c.position}, ${c.type}, FALSE, ${c.is_plus})
+      SELECT * FROM unnest(
+        ${numbers}::text[],
+        ${names}::text[],
+        ${teams}::text[],
+        ${positions}::text[],
+        ${types}::text[],
+        ARRAY(SELECT false FROM generate_series(1, ${batch.length}))::boolean[],
+        ${isPlus}::boolean[]
+      )
     `
   }
 }
