@@ -7,7 +7,12 @@
       "Read(//Users/jorgegarciabetanzos/Documents/Projects/**)",
       "Bash(npx create-next-app@latest adrenalyn-panel --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --yes)",
       "Bash(npm install:*)",
-      "Bash(npx shadcn@latest init --defaults -y)"
+      "Bash(npx shadcn@latest init --defaults -y)",
+      "Bash(npx shadcn@latest add card badge progress separator sidebar tooltip)",
+      "Bash(npm run:*)",
+      "Bash(curl -s http://localhost:3000/api/stats)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f''''Total: {d[\"\"total\"\"]}, Collected: {d[\"\"collected\"\"]}, Types: {len\\(d[\"\"byType\"\"]\\)}, Teams: {len\\(d[\"\"byTeam\"\"]\\)}''''\\)\")",
+      "Bash(git config:*)"
     ]
   }
 }
