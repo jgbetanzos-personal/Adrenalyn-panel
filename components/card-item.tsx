@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Check, Copy } from 'lucide-react'
 import { TypeLabel } from '@/components/type-label'
@@ -15,6 +15,8 @@ export function CardItem({ card: initial }: CardItemProps) {
   const [pendingCollected, startCollected] = useTransition()
   const [pendingRepeated, startRepeated] = useTransition()
   const router = useRouter()
+
+  useEffect(() => { setCard(initial) }, [initial])
 
   function toggle(field: 'collected' | 'repeated') {
     const start = field === 'collected' ? startCollected : startRepeated

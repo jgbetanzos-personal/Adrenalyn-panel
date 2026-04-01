@@ -42,13 +42,13 @@ export async function initDb() {
   `
   await db`
     INSERT INTO cards (number, name, team, position, type, is_plus)
-    VALUES ('520', 'Card Fantástica', '-', '-', 'CARD_FANTASTICA', TRUE)
-    ON CONFLICT DO NOTHING
+    SELECT '520', 'Card Fantástica', '-', '-', 'CARD_FANTASTICA', TRUE
+    WHERE NOT EXISTS (SELECT 1 FROM cards WHERE number = '520')
   `
   await db`
     INSERT INTO cards (number, name, team, position, type, is_plus)
-    VALUES ('521', 'Courtois', 'Real Madrid', 'P', 'NUEVO_BALON_ORO', TRUE)
-    ON CONFLICT DO NOTHING
+    SELECT '521', 'Courtois', 'Real Madrid', 'P', 'NUEVO_BALON_ORO', TRUE
+    WHERE NOT EXISTS (SELECT 1 FROM cards WHERE number = '521')
   `
 
   const [{ count }] = await db`SELECT COUNT(*)::int AS count FROM cards`

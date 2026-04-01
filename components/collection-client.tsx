@@ -38,7 +38,6 @@ export function CollectionClient({ initialCards }: { initialCards: Card[] }) {
   const [filter, setFilter] = useState<FilterMode>('all')
   const [showBis, setShowBis] = useState(true)
   const [showPlus, setShowPlus] = useState(true)
-  const router = useRouter()
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
@@ -56,7 +55,6 @@ export function CollectionClient({ initialCards }: { initialCards: Card[] }) {
   // Called by TeamSection after a bulk toggle
   function onBulkUpdate(ids: number[], collected: boolean) {
     setCards(prev => prev.map(c => ids.includes(c.id) ? { ...c, collected } : c))
-    router.refresh()
   }
 
   function sectionProgress(sectionCards: Card[]) {
@@ -236,6 +234,7 @@ function TeamSection({
 }) {
   const [open, setOpen] = useState(true)
   const [pending, startTransition] = useTransition()
+  const router = useRouter()
 
   const allCollected = allCardsForTeam.every(c => c.collected)
 
@@ -249,7 +248,10 @@ function TeamSection({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids, collected: targetState }),
       })
-      if (res.ok) onBulkUpdate(ids, targetState)
+      if (res.ok) {
+        onBulkUpdate(ids, targetState)
+        router.refresh()
+      }
     })
   }
 
