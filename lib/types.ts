@@ -20,6 +20,9 @@ export type CardType =
   | 'NUEVO_DIAMANTE'
   | 'NUEVO_PROTA'
   | 'NUEVO_SUPER_CRACK'
+  | 'MASTER_MISTER'
+  | 'NUEVO_BALON_ORO'
+  | 'CARD_FANTASTICA'
   | 'ESPECIAL_AUTOGRAFO'
   | 'BIS'
 

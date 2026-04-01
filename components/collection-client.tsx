@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { Search, CheckCheck, X } from 'lucide-react'
 import { CardItem } from '@/components/card-item'
 import { Progress } from '@/components/ui/progress'
@@ -25,7 +26,8 @@ const SPECIAL_TYPES: CardType[] = [
 
 const PLUS_TYPES: CardType[] = [
   'ENTRENADOR', 'NUEVO_GUANTES_ORO', 'NUEVO_KRYPTONITA', 'NUEVO_DIAMANTE',
-  'NUEVO_PROTA', 'NUEVO_SUPER_CRACK', 'ESPECIAL_AUTOGRAFO',
+  'NUEVO_PROTA', 'NUEVO_SUPER_CRACK', 'MASTER_MISTER', 'NUEVO_BALON_ORO',
+  'CARD_FANTASTICA', 'ESPECIAL_AUTOGRAFO',
 ]
 
 type FilterMode = 'all' | 'missing' | 'collected' | 'repeated'
@@ -36,6 +38,7 @@ export function CollectionClient({ initialCards }: { initialCards: Card[] }) {
   const [filter, setFilter] = useState<FilterMode>('all')
   const [showBis, setShowBis] = useState(true)
   const [showPlus, setShowPlus] = useState(true)
+  const router = useRouter()
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
@@ -53,6 +56,7 @@ export function CollectionClient({ initialCards }: { initialCards: Card[] }) {
   // Called by TeamSection after a bulk toggle
   function onBulkUpdate(ids: number[], collected: boolean) {
     setCards(prev => prev.map(c => ids.includes(c.id) ? { ...c, collected } : c))
+    router.refresh()
   }
 
   function sectionProgress(sectionCards: Card[]) {

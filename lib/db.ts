@@ -31,6 +31,26 @@ export async function initDb() {
     ALTER TABLE cards ADD COLUMN IF NOT EXISTS repeated BOOLEAN NOT NULL DEFAULT FALSE
   `
 
+  // Migration: fix wrong data for 518 and 519, add missing 520 and 521
+  await db`
+    UPDATE cards SET name='Hansi Flick', team='FC Barcelona', position='-', type='MASTER_MISTER'
+    WHERE number='518'
+  `
+  await db`
+    UPDATE cards SET name='Marcelino García', team='Villarreal CF', position='-', type='MASTER_MISTER'
+    WHERE number='519'
+  `
+  await db`
+    INSERT INTO cards (number, name, team, position, type, is_plus)
+    VALUES ('520', 'Card Fantástica', '-', '-', 'CARD_FANTASTICA', TRUE)
+    ON CONFLICT DO NOTHING
+  `
+  await db`
+    INSERT INTO cards (number, name, team, position, type, is_plus)
+    VALUES ('521', 'Courtois', 'Real Madrid', 'P', 'NUEVO_BALON_ORO', TRUE)
+    ON CONFLICT DO NOTHING
+  `
+
   const [{ count }] = await db`SELECT COUNT(*)::int AS count FROM cards`
   if (count === 0) {
     await seedData()
@@ -744,8 +764,14 @@ const ALL_CARDS: SeedCard[] = [
   plus(515, 'Joao Cancelo',  'FC Barcelona',       'D',  'NUEVO_SUPER_CRACK'),
   plus(516, 'Rodrygo',       'Real Madrid',        'DE', 'NUEVO_SUPER_CRACK'),
   plus(517, 'Guedes',        'Real Sociedad',      'DE', 'NUEVO_SUPER_CRACK'),
-  plus(518, 'Nico Williams', 'Athletic Club',      'DE', 'NUEVO_SUPER_CRACK'),
-  plus(519, 'Marcelino',     'Villarreal CF',      '-',  'NUEVO_SUPER_CRACK'),
+  plus(518, 'Hansi Flick',      'FC Barcelona',  '-', 'MASTER_MISTER'),
+  plus(519, 'Marcelino García', 'Villarreal CF', '-', 'MASTER_MISTER'),
+
+  // ─── PLUS: CARD FANTÁSTICA (520) ─────────────────────────────────────────────
+  plus(520, 'Card Fantástica', '-', '-', 'CARD_FANTASTICA'),
+
+  // ─── PLUS: NUEVO BALÓN DE ORO (521) ──────────────────────────────────────────
+  plus(521, 'Courtois', 'Real Madrid', 'P', 'NUEVO_BALON_ORO'),
 
   // ─── PLUS: ESPECIAL AUTÓGRAFO (522) ──────────────────────────────────────────
   plus(522, 'Pedri (Autógrafo)', 'FC Barcelona', 'M', 'ESPECIAL_AUTOGRAFO'),

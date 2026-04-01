@@ -23,6 +23,9 @@ const TYPE_CONFIG: Record<CardType, { label: string; color: string }> = {
   NUEVO_DIAMANTE:        { label: 'New Diamante',       color: 'bg-cyan-200 text-cyan-800' },
   NUEVO_PROTA:           { label: 'New Prota',          color: 'bg-indigo-200 text-indigo-800' },
   NUEVO_SUPER_CRACK:     { label: 'New Super Crack',    color: 'bg-orange-200 text-orange-800' },
+  MASTER_MISTER:         { label: 'Master Mister',      color: 'bg-gray-800 text-white' },
+  NUEVO_BALON_ORO:       { label: 'Nuevo Balón de Oro', color: 'bg-amber-300 text-amber-900' },
+  CARD_FANTASTICA:       { label: 'Card Fantástica',    color: 'bg-pink-200 text-pink-800' },
   ESPECIAL_AUTOGRAFO:    { label: 'Autógrafo',          color: 'bg-fuchsia-100 text-fuchsia-700' },
   BIS:                   { label: 'BIS',                color: 'bg-lime-100 text-lime-700' },
 }
