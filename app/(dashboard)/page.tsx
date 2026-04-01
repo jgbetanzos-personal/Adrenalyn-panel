@@ -8,8 +8,8 @@ import type { CardType } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
 
-export default function OverviewPage() {
-  const stats = getStats()
+export default async function OverviewPage() {
+  const stats = await getStats()
 
   return (
     <div className="space-y-8 max-w-5xl">
@@ -20,25 +20,15 @@ export default function OverviewPage() {
 
       {/* KPIs principales */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard
-          title="Total cromos"
-          value={stats.total}
-        />
+        <KpiCard title="Total cromos" value={stats.total} />
         <KpiCard
           title="Conseguidos"
           value={stats.collected}
           sub={`${stats.pct}% completado`}
           progress={stats.pct}
         />
-        <KpiCard
-          title="Faltan"
-          value={stats.missing}
-        />
-        <KpiCard
-          title="% Completado"
-          value={`${stats.pct}%`}
-          progress={stats.pct}
-        />
+        <KpiCard title="Faltan" value={stats.missing} />
+        <KpiCard title="% Completado" value={`${stats.pct}%`} progress={stats.pct} />
       </div>
 
       <Separator />

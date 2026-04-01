@@ -12,7 +12,8 @@
       "Bash(npm run:*)",
       "Bash(curl -s http://localhost:3000/api/stats)",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f''''Total: {d[\"\"total\"\"]}, Collected: {d[\"\"collected\"\"]}, Types: {len\\(d[\"\"byType\"\"]\\)}, Teams: {len\\(d[\"\"byTeam\"\"]\\)}''''\\)\")",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(npm uninstall:*)"
     ]
   }
 }

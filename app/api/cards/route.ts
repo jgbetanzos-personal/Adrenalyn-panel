@@ -3,9 +3,9 @@ import { getAllCards } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
-export function GET() {
+export async function GET() {
   try {
-    const cards = getAllCards()
+    const cards = await getAllCards()
     return NextResponse.json(cards)
   } catch (err) {
     console.error(err)
