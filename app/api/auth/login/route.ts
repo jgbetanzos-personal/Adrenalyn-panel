@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   const token = await createSession({
     userId: user.id,
     username: user.username,
-    role: user.role,
+    role: user.role as 'superadmin' | 'user',
   })
 
   const res = NextResponse.json({ ok: true, role: user.role })
