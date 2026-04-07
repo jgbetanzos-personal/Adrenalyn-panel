@@ -10,6 +10,7 @@ export default async function PerfilPage() {
   if (!session) redirect('/login')
 
   const user = await getUserById(session.userId)
+  if (!user) redirect('/login')
 
   return (
     <div className="space-y-6 max-w-lg">
