@@ -23,7 +23,8 @@
       "Bash(curl -s -X POST http://localhost:3000/api/seed)",
       "Bash(export PATH=\"/Users/jorgegarciabetanzos/.nvm/versions/node/v20.20.2/bin:$PATH\" cd /Users/jorgegarciabetanzos/Documents/Projects/adrenalyn-panel npm run build)",
       "WebFetch(domain:elmiradorespagnol.free.fr)",
-      "Bash(cd /Users/jorgegarciabetanzos/Documents/Projects/adrenalyn-panel/public/escudos ls -lh)"
+      "Bash(cd /Users/jorgegarciabetanzos/Documents/Projects/adrenalyn-panel/public/escudos ls -lh)",
+      "Bash(find /Users/jorgegarciabetanzos/Documents/Projects/adrenalyn-panel/node_modules/next/dist/docs -name *middleware* -o -name *auth*)"
     ]
   }
 }
