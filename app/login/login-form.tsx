@@ -25,7 +25,9 @@ export function LoginForm() {
     setLoading(false)
 
     if (res.ok) {
-      const from = searchParams.get('from') ?? '/'
+      const data = await res.json()
+      const defaultPath = data.role === 'superadmin' ? '/admin' : '/'
+      const from = searchParams.get('from') ?? defaultPath
       router.push(from)
       router.refresh()
     } else {

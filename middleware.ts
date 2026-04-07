@@ -1,26 +1,41 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { jwtVerify } from 'jose'
+
+const SECRET = new TextEncoder().encode(
+  process.env.AUTH_SECRET ?? 'adrenalyn-panel-secret-2025'
+)
 
 const PUBLIC_PATHS = ['/login', '/ver', '/api/cards', '/api/auth']
 
-export function middleware(request: NextRequest) {
+async function getSession(token: string) {
+  try {
+    const { payload } = await jwtVerify(token, SECRET)
+    return payload as { userId: number; username: string; role: string }
+  } catch {
+    return null
+  }
+}
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Rutas públicas: no requieren auth
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
     return NextResponse.next()
   }
 
-  // APIs de escritura (bulk, toggle) sí requieren auth
-  // /api/cards GET está permitido, pero PATCH/POST no desde fuera del panel
-  // La protección real es que el panel ya está protegido por login
+  const token = request.cookies.get('auth_session')?.value
+  const session = token ? await getSession(token) : null
 
-  const secret = process.env.AUTH_SECRET ?? 'adrenalyn-panel-secret-2025'
-  const session = request.cookies.get('auth_session')?.value
-  if (!session || session !== secret) {
+  if (!session) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('from', pathname)
     return NextResponse.redirect(loginUrl)
+  }
+
+  // Proteger rutas de admin
+  if (pathname.startsWith('/admin') && session.role !== 'superadmin') {
+    return NextResponse.redirect(new URL('/', request.url))
   }
 
   return NextResponse.next()

@@ -24,7 +24,10 @@
       "Bash(export PATH=\"/Users/jorgegarciabetanzos/.nvm/versions/node/v20.20.2/bin:$PATH\" cd /Users/jorgegarciabetanzos/Documents/Projects/adrenalyn-panel npm run build)",
       "WebFetch(domain:elmiradorespagnol.free.fr)",
       "Bash(cd /Users/jorgegarciabetanzos/Documents/Projects/adrenalyn-panel/public/escudos ls -lh)",
-      "Bash(find /Users/jorgegarciabetanzos/Documents/Projects/adrenalyn-panel/node_modules/next/dist/docs -name *middleware* -o -name *auth*)"
+      "Bash(find /Users/jorgegarciabetanzos/Documents/Projects/adrenalyn-panel/node_modules/next/dist/docs -name *middleware* -o -name *auth*)",
+      "Read(//usr/local/bin/**)",
+      "Read(//opt/homebrew/bin/**)",
+      "Bash(ls /Users/jorgegarciabetanzos/Documents/Projects/adrenalyn-panel/app/\\\\\\(dashboard\\\\\\)/)"
     ]
   }
 }

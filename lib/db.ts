@@ -1,5 +1,6 @@
 import { neon } from '@neondatabase/serverless'
 import type { Card, CardType, Position } from './types'
+import { hashPassword } from './users'
 
 function sql() {
   if (!process.env.DATABASE_URL) {
@@ -13,6 +14,7 @@ function sql() {
 export async function initDb() {
   const db = sql()
 
+  // Cards catalog (collected/repeated kept for legacy migration)
   await db`
     CREATE TABLE IF NOT EXISTS cards (
       id        SERIAL PRIMARY KEY,
@@ -26,19 +28,40 @@ export async function initDb() {
       is_plus   BOOLEAN NOT NULL DEFAULT FALSE
     )
   `
-  // Migration: add repeated column if it doesn't exist yet
+
+  // Users table
   await db`
-    ALTER TABLE cards ADD COLUMN IF NOT EXISTS repeated BOOLEAN NOT NULL DEFAULT FALSE
+    CREATE TABLE IF NOT EXISTS users (
+      id           SERIAL PRIMARY KEY,
+      username     TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      name         TEXT NOT NULL DEFAULT '',
+      surname      TEXT NOT NULL DEFAULT '',
+      photo_url    TEXT,
+      role         TEXT NOT NULL DEFAULT 'user'
+    )
   `
 
-  // Migration: fix wrong data for 518 and 519, add missing 520 and 521
+  // Per-user collection state
+  await db`
+    CREATE TABLE IF NOT EXISTS user_cards (
+      user_id   INTEGER NOT NULL REFERENCES users(id),
+      card_id   INTEGER NOT NULL REFERENCES cards(id),
+      collected BOOLEAN NOT NULL DEFAULT FALSE,
+      repeated  BOOLEAN NOT NULL DEFAULT FALSE,
+      PRIMARY KEY (user_id, card_id)
+    )
+  `
+
+  // Legacy migrations
+  await db`ALTER TABLE cards ADD COLUMN IF NOT EXISTS repeated BOOLEAN NOT NULL DEFAULT FALSE`
   await db`
     UPDATE cards SET name='Hansi Flick', team='FC Barcelona', position='-', type='MASTER_MISTER'
-    WHERE number='518'
+    WHERE number='518' AND name != 'Hansi Flick'
   `
   await db`
     UPDATE cards SET name='Marcelino García', team='Villarreal CF', position='-', type='MASTER_MISTER'
-    WHERE number='519'
+    WHERE number='519' AND name != 'Marcelino García'
   `
   await db`
     INSERT INTO cards (number, name, team, position, type, is_plus)
@@ -51,19 +74,50 @@ export async function initDb() {
     WHERE NOT EXISTS (SELECT 1 FROM cards WHERE number = '521')
   `
 
+  // Seed cards catalog
   const [{ count }] = await db`SELECT COUNT(*)::int AS count FROM cards`
   if (count === 0) {
-    await seedData()
+    await seedCards()
   }
+
+  // Seed users
+  await seedUsers()
+
+  // Migrate existing collected/repeated data from old cards table to gorka's user_cards
+  await db`
+    INSERT INTO user_cards (user_id, card_id, collected, repeated)
+    SELECT u.id, c.id, c.collected, c.repeated
+    FROM cards c
+    CROSS JOIN (SELECT id FROM users WHERE username = 'gorka') u
+    WHERE c.collected = TRUE OR c.repeated = TRUE
+    ON CONFLICT (user_id, card_id) DO NOTHING
+  `
 }
 
-async function seedData() {
+async function seedUsers() {
   const db = sql()
-  // Neon HTTP driver: insert in batches of 100 rows per query to stay within limits
+  const [{ count }] = await db`SELECT COUNT(*)::int AS count FROM users`
+  if (count > 0) return
+
+  const [superHash, gorkaHash, hugoHash] = await Promise.all([
+    hashPassword('sup3r4admin31'),
+    hashPassword('g0rk42015'),
+    hashPassword('hugo2015'),
+  ])
+
+  await db`
+    INSERT INTO users (username, password_hash, name, surname, role) VALUES
+    ('superadmin', ${superHash}, 'Super', 'Admin', 'superadmin'),
+    ('gorka',      ${gorkaHash}, 'Gorka', 'De Los Ríos', 'user'),
+    ('hugo',       ${hugoHash},  'Hugo',  'Bartolomé',   'user')
+  `
+}
+
+async function seedCards() {
+  const db = sql()
   const BATCH = 100
   for (let i = 0; i < ALL_CARDS.length; i += BATCH) {
     const batch = ALL_CARDS.slice(i, i + BATCH)
-    // Build a single multi-row INSERT using neon tagged template + unnest trick
     const numbers   = batch.map(c => c.number)
     const names     = batch.map(c => c.name)
     const teams     = batch.map(c => c.team)
@@ -87,46 +141,90 @@ async function seedData() {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-export async function getAllCards(): Promise<Card[]> {
+export async function getAllCards(userId: number): Promise<Card[]> {
   await initDb()
   const db = sql()
-  const rows = await db`SELECT * FROM cards ORDER BY is_plus ASC, id ASC`
+  const rows = await db`
+    SELECT c.id, c.number, c.name, c.team, c.position, c.type, c.is_plus,
+           COALESCE(uc.collected, FALSE) AS collected,
+           COALESCE(uc.repeated,  FALSE) AS repeated
+    FROM cards c
+    LEFT JOIN user_cards uc ON uc.card_id = c.id AND uc.user_id = ${userId}
+    ORDER BY c.is_plus ASC, c.id ASC
+  `
   return rows.map(toCard)
 }
 
-export async function toggleCard(id: number, field: 'collected' | 'repeated' = 'collected'): Promise<Card> {
+export async function toggleCard(
+  userId: number,
+  cardId: number,
+  field: 'collected' | 'repeated' = 'collected'
+): Promise<Card> {
   await initDb()
   const db = sql()
+
   if (field === 'repeated') {
-    await db`UPDATE cards SET repeated = NOT repeated WHERE id = ${id}`
+    await db`
+      INSERT INTO user_cards (user_id, card_id, collected, repeated)
+      VALUES (${userId}, ${cardId}, FALSE, TRUE)
+      ON CONFLICT (user_id, card_id) DO UPDATE SET repeated = NOT user_cards.repeated
+    `
   } else {
-    await db`UPDATE cards SET collected = NOT collected WHERE id = ${id}`
+    await db`
+      INSERT INTO user_cards (user_id, card_id, collected, repeated)
+      VALUES (${userId}, ${cardId}, TRUE, FALSE)
+      ON CONFLICT (user_id, card_id) DO UPDATE SET collected = NOT user_cards.collected
+    `
   }
-  const [row] = await db`SELECT * FROM cards WHERE id = ${id}`
+
+  const [row] = await db`
+    SELECT c.id, c.number, c.name, c.team, c.position, c.type, c.is_plus,
+           COALESCE(uc.collected, FALSE) AS collected,
+           COALESCE(uc.repeated,  FALSE) AS repeated
+    FROM cards c
+    LEFT JOIN user_cards uc ON uc.card_id = c.id AND uc.user_id = ${userId}
+    WHERE c.id = ${cardId}
+  `
   return toCard(row)
 }
 
-export async function bulkSetCollected(ids: number[], collected: boolean): Promise<void> {
+export async function bulkSetCollected(userId: number, ids: number[], collected: boolean): Promise<void> {
   await initDb()
   const db = sql()
-  await db`UPDATE cards SET collected = ${collected} WHERE id = ANY(${ids}::int[])`
+  await db`
+    INSERT INTO user_cards (user_id, card_id, collected, repeated)
+    SELECT ${userId}, unnest(${ids}::int[]), ${collected}, FALSE
+    ON CONFLICT (user_id, card_id) DO UPDATE SET collected = ${collected}
+  `
 }
 
-export async function getStats() {
+export async function getStats(userId: number) {
   await initDb()
   const db = sql()
 
-  const [{ total }]     = await db`SELECT COUNT(*)::int AS total FROM cards`
-  const [{ collected }] = await db`SELECT COUNT(*)::int AS collected FROM cards WHERE collected = TRUE`
+  const [{ total }] = await db`SELECT COUNT(*)::int AS total FROM cards`
+  const [{ collected }] = await db`
+    SELECT COUNT(*)::int AS collected FROM user_cards
+    WHERE user_id = ${userId} AND collected = TRUE
+  `
 
   const byType = await db`
-    SELECT type, COUNT(*)::int AS total, SUM(CASE WHEN collected THEN 1 ELSE 0 END)::int AS collected
-    FROM cards GROUP BY type ORDER BY type
+    SELECT c.type,
+           COUNT(*)::int AS total,
+           SUM(CASE WHEN uc.collected THEN 1 ELSE 0 END)::int AS collected
+    FROM cards c
+    LEFT JOIN user_cards uc ON uc.card_id = c.id AND uc.user_id = ${userId}
+    GROUP BY c.type ORDER BY c.type
   `
 
   const byTeam = await db`
-    SELECT team, COUNT(*)::int AS total, SUM(CASE WHEN collected THEN 1 ELSE 0 END)::int AS collected
-    FROM cards WHERE team != '-' GROUP BY team ORDER BY team
+    SELECT c.team,
+           COUNT(*)::int AS total,
+           SUM(CASE WHEN uc.collected THEN 1 ELSE 0 END)::int AS collected
+    FROM cards c
+    LEFT JOIN user_cards uc ON uc.card_id = c.id AND uc.user_id = ${userId}
+    WHERE c.team != '-'
+    GROUP BY c.team ORDER BY c.team
   `
 
   return {

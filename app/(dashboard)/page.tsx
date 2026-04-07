@@ -1,4 +1,6 @@
 import { getStats } from '@/lib/db'
+import { getSession } from '@/lib/session'
+import { redirect } from 'next/navigation'
 import { KpiCard } from '@/components/kpi-card'
 import { Progress } from '@/components/ui/progress'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,7 +11,9 @@ import type { CardType } from '@/lib/types'
 export const dynamic = 'force-dynamic'
 
 export default async function OverviewPage() {
-  const stats = await getStats()
+  const session = await getSession()
+  if (!session) redirect('/login')
+  const stats = await getStats(session.userId)
 
   return (
     <div className="space-y-8 max-w-5xl">
