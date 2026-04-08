@@ -83,9 +83,10 @@ export function LoginForm() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-muted-foreground">
-          <a href="/ver" className="underline underline-offset-2 hover:text-foreground">
-            Ver colección pública
+        <p className="text-center text-sm text-muted-foreground">
+          ¿No tienes cuenta?{' '}
+          <a href="/registro" className="underline underline-offset-2 hover:text-foreground">
+            Regístrate
           </a>
         </p>
       </div>

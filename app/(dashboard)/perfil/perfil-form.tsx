@@ -3,22 +3,46 @@
 import { useState, useRef } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import type { DbUser } from '@/lib/users'
 
-interface User {
-  id: number
-  name: string
-  surname: string
-  photo_url: string | null
-  username: string
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const CP_RE    = /^(?:0[1-9]|[1-4]\d|5[0-2])\d{3}$/
+
+function Field({
+  id, label, type = 'text', value, onChange, error,
+}: {
+  id: string; label: string; type?: string
+  value: string; onChange: (v: string) => void
+  error?: string
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-sm font-medium" htmlFor={id}>{label}</label>
+      <input
+        id={id}
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`w-full rounded-lg border px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 ${
+          error ? 'border-red-400 focus:ring-red-300' : 'focus:ring-orange-400'
+        }`}
+      />
+      {error && <p className="text-xs text-red-600">{error}</p>}
+    </div>
+  )
 }
 
-export function PerfilForm({ user }: { user: User }) {
+export function PerfilForm({ user }: { user: DbUser }) {
   const router = useRouter()
-  const [name, setName]       = useState(user.name)
-  const [surname, setSurname] = useState(user.surname)
-  const [preview, setPreview] = useState<string | null>(user.photo_url)
-  const [saving, setSaving]   = useState(false)
-  const [saved, setSaved]     = useState(false)
+  const [name,       setName]       = useState(user.name)
+  const [surname,    setSurname]    = useState(user.surname)
+  const [email,      setEmail]      = useState(user.email ?? '')
+  const [address,    setAddress]    = useState(user.address ?? '')
+  const [postalCode, setPostalCode] = useState(user.postal_code ?? '')
+  const [preview,    setPreview]    = useState<string | null>(user.photo_url)
+  const [saving,     setSaving]     = useState(false)
+  const [saved,      setSaved]      = useState(false)
+  const [errors,     setErrors]     = useState<Record<string, string>>({})
   const fileRef = useRef<HTMLInputElement>(null)
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -27,23 +51,34 @@ export function PerfilForm({ user }: { user: User }) {
     setPreview(URL.createObjectURL(file))
   }
 
+  function validate(): boolean {
+    const e: Record<string, string> = {}
+    if (!name.trim())             e.name        = 'Obligatorio'
+    if (!surname.trim())          e.surname     = 'Obligatorio'
+    if (!EMAIL_RE.test(email))    e.email       = 'Email no válido'
+    if (!address.trim())          e.address     = 'Obligatorio'
+    if (!CP_RE.test(postalCode))  e.postal_code = 'Código postal español inválido'
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!validate()) return
     setSaving(true)
     setSaved(false)
 
     const formData = new FormData()
-    formData.append('name', name)
-    formData.append('surname', surname)
+    formData.append('name',        name)
+    formData.append('surname',     surname)
+    formData.append('email',       email)
+    formData.append('address',     address)
+    formData.append('postal_code', postalCode)
     if (fileRef.current?.files?.[0]) {
       formData.append('photo', fileRef.current.files[0])
     }
 
-    const res = await fetch('/api/profile', {
-      method: 'PATCH',
-      body: formData,
-    })
-
+    const res = await fetch('/api/profile', { method: 'PATCH', body: formData })
     setSaving(false)
     if (res.ok) {
       setSaved(true)
@@ -83,40 +118,24 @@ export function PerfilForm({ user }: { user: User }) {
           <p>JPG, PNG o GIF · máx. 4 MB</p>
           <p>Se mostrará en tu página pública</p>
         </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          onChange={onFileChange}
-          className="hidden"
-        />
+        <input ref={fileRef} type="file" accept="image/*" onChange={onFileChange} className="hidden" />
       </div>
 
-      {/* Nombre */}
       <div className="space-y-1.5">
-        <label className="text-sm font-medium" htmlFor="name">Nombre</label>
-        <input
-          id="name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          className="w-full rounded-lg border px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-orange-400"
-        />
+        <label className="text-sm font-medium">Nombre de usuario</label>
+        <div className="w-full rounded-lg border px-3 py-2 text-sm bg-muted text-muted-foreground">
+          {user.username}
+        </div>
       </div>
 
-      {/* Apellidos */}
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium" htmlFor="surname">Apellidos</label>
-        <input
-          id="surname"
-          type="text"
-          value={surname}
-          onChange={(e) => setSurname(e.target.value)}
-          required
-          className="w-full rounded-lg border px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-orange-400"
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <Field id="name"    label="Nombre"    value={name}    onChange={setName}    error={errors.name} />
+        <Field id="surname" label="Apellidos" value={surname} onChange={setSurname} error={errors.surname} />
       </div>
+
+      <Field id="email"   label="Email"        type="email" value={email}      onChange={setEmail}      error={errors.email} />
+      <Field id="address" label="Dirección"                 value={address}    onChange={setAddress}    error={errors.address} />
+      <Field id="postal"  label="Código postal"             value={postalCode} onChange={setPostalCode} error={errors.postal_code} />
 
       <div className="flex items-center gap-3">
         <button

@@ -32,15 +32,22 @@ export async function initDb() {
   // Users table
   await db`
     CREATE TABLE IF NOT EXISTS users (
-      id           SERIAL PRIMARY KEY,
-      username     TEXT NOT NULL UNIQUE,
+      id            SERIAL PRIMARY KEY,
+      username      TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
-      name         TEXT NOT NULL DEFAULT '',
-      surname      TEXT NOT NULL DEFAULT '',
-      photo_url    TEXT,
-      role         TEXT NOT NULL DEFAULT 'user'
+      name          TEXT NOT NULL DEFAULT '',
+      surname       TEXT NOT NULL DEFAULT '',
+      photo_url     TEXT,
+      role          TEXT NOT NULL DEFAULT 'user',
+      email         TEXT,
+      address       TEXT,
+      postal_code   TEXT
     )
   `
+  // Migration: add new columns if they don't exist yet
+  await db`ALTER TABLE users ADD COLUMN IF NOT EXISTS email       TEXT`
+  await db`ALTER TABLE users ADD COLUMN IF NOT EXISTS address     TEXT`
+  await db`ALTER TABLE users ADD COLUMN IF NOT EXISTS postal_code TEXT`
 
   // Per-user collection state
   await db`

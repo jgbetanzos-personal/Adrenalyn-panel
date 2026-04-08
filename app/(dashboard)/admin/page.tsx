@@ -1,6 +1,7 @@
 import { getAllUsers } from '@/lib/users'
 import { getStats } from '@/lib/db'
 import { Progress } from '@/components/ui/progress'
+import { ChangePasswordForm } from '@/components/change-password-form'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -27,7 +28,7 @@ export default async function AdminPage() {
 
       <div className="grid gap-4">
         {usersWithStats.map((u) => (
-          <div key={u.id} className="rounded-xl border p-5 flex items-center gap-5">
+          <div key={u.id} className="rounded-xl border p-5 flex flex-col sm:flex-row sm:items-center gap-5">
             {/* Avatar */}
             <div className="shrink-0">
               {u.photo_url ? (
@@ -62,7 +63,7 @@ export default async function AdminPage() {
             </div>
 
             {/* Acciones */}
-            <div className="shrink-0 flex flex-col gap-2">
+            <div className="shrink-0 flex flex-col gap-2 w-full sm:w-auto">
               <Link
                 href={`/admin/${u.username}`}
                 className="rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium px-3 py-1.5 transition-colors text-center"
@@ -76,6 +77,7 @@ export default async function AdminPage() {
               >
                 Página pública
               </Link>
+              <ChangePasswordForm username={u.username} />
             </div>
           </div>
         ))}

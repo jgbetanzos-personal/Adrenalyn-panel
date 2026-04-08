@@ -6,7 +6,7 @@ const SECRET = new TextEncoder().encode(
   process.env.AUTH_SECRET ?? 'adrenalyn-panel-secret-2025'
 )
 
-const PUBLIC_PATHS = ['/login', '/ver', '/api/cards', '/api/auth']
+const PUBLIC_PATHS = ['/login', '/registro', '/ver', '/api/cards', '/api/auth']
 
 async function getSession(token: string) {
   try {

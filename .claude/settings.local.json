@@ -27,7 +27,8 @@
       "Bash(find /Users/jorgegarciabetanzos/Documents/Projects/adrenalyn-panel/node_modules/next/dist/docs -name *middleware* -o -name *auth*)",
       "Read(//usr/local/bin/**)",
       "Read(//opt/homebrew/bin/**)",
-      "Bash(ls /Users/jorgegarciabetanzos/Documents/Projects/adrenalyn-panel/app/\\\\\\(dashboard\\\\\\)/)"
+      "Bash(ls /Users/jorgegarciabetanzos/Documents/Projects/adrenalyn-panel/app/\\\\\\(dashboard\\\\\\)/)",
+      "WebFetch(domain:cromosrepes.com)"
     ]
   }
 }
