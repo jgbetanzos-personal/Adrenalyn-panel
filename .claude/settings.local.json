@@ -28,7 +28,17 @@
       "Read(//usr/local/bin/**)",
       "Read(//opt/homebrew/bin/**)",
       "Bash(ls /Users/jorgegarciabetanzos/Documents/Projects/adrenalyn-panel/app/\\\\\\(dashboard\\\\\\)/)",
-      "WebFetch(domain:cromosrepes.com)"
+      "WebFetch(domain:cromosrepes.com)",
+      "Bash(brew install:*)",
+      "Bash(/opt/homebrew/bin/pdftoppm -v)",
+      "Bash(/opt/homebrew/bin/pdftotext -layout \"/Users/jorgegarciabetanzos/Desktop/GUIA-PROPUESTAS-Cromos-Repes.pdf\" -)",
+      "WebSearch",
+      "WebFetch(domain:librebor.me)",
+      "WebFetch(domain:www.infoempresa.com)",
+      "WebFetch(domain:www.similarweb.com)",
+      "WebFetch(domain:dialnet.unirioja.es)",
+      "WebFetch(domain:x.com)",
+      "WebFetch(domain:www.facebook.com)"
     ]
   }
 }
