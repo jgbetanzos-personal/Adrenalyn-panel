@@ -2,6 +2,7 @@ import { getAllUsers } from '@/lib/users'
 import { getStats } from '@/lib/db'
 import { Progress } from '@/components/ui/progress'
 import { ChangePasswordForm } from '@/components/change-password-form'
+import { DeleteUserButton } from '@/components/delete-user-button'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -78,6 +79,7 @@ export default async function AdminPage() {
                 Página pública
               </Link>
               <ChangePasswordForm username={u.username} />
+              <DeleteUserButton username={u.username} name={u.name || u.username} />
             </div>
           </div>
         ))}
