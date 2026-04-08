@@ -4,6 +4,8 @@ import { getSession } from '@/lib/session'
 import { getUserById } from '@/lib/users'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { getUnreadExchangeCount } from '@/lib/exchanges'
+import { getUnreadMessageCount } from '@/lib/messages'
 
 function isProfileComplete(user: { name: string; surname: string; address: string | null; postal_code: string | null; email: string | null }) {
   return !!(user.name && user.surname && user.address && user.postal_code && user.email)
@@ -16,9 +18,21 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const user = session.role !== 'superadmin' ? await getUserById(session.userId) : null
   const profileIncomplete = user && !isProfileComplete(user)
 
+  const [exchangeCount, messageCount] = session.role !== 'superadmin'
+    ? await Promise.all([
+        getUnreadExchangeCount(session.userId),
+        getUnreadMessageCount(session.userId),
+      ])
+    : [0, 0]
+
   return (
     <SidebarProvider>
-      <AppSidebar username={session.username} role={session.role} />
+      <AppSidebar
+        username={session.username}
+        role={session.role}
+        exchangeCount={exchangeCount}
+        messageCount={messageCount}
+      />
       <SidebarInset>
         <header className="flex h-12 items-center gap-2 border-b px-4 sticky top-0 bg-background z-10">
           <SidebarTrigger />

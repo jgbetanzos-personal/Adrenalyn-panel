@@ -38,7 +38,13 @@
       "WebFetch(domain:www.similarweb.com)",
       "WebFetch(domain:dialnet.unirioja.es)",
       "WebFetch(domain:x.com)",
-      "WebFetch(domain:www.facebook.com)"
+      "WebFetch(domain:www.facebook.com)",
+      "Bash(mkdir -p \"/Users/jorgegarciabetanzos/Documents/Projects/adrenalyn-panel/app/\\(dashboard\\)/intercambios/nuevo/[username]\")",
+      "Bash(mkdir -p \"/Users/jorgegarciabetanzos/Documents/Projects/adrenalyn-panel/app/\\(dashboard\\)/intercambios/[id]\")",
+      "Bash(mkdir -p \"/Users/jorgegarciabetanzos/Documents/Projects/adrenalyn-panel/app/\\(dashboard\\)/mensajes/[username]\")",
+      "Bash(npx tsc:*)",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(p.dependencies?.next, p.devDependencies?.next\\)\")",
+      "Bash(xargs cat:*)"
     ]
   }
 }

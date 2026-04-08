@@ -2,7 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Grid3X3, LogOut, Eye, Users, ShieldCheck } from 'lucide-react'
+import {
+  LayoutDashboard, Grid3X3, LogOut, Eye, Users, ShieldCheck,
+  Search, ArrowLeftRight, MessageSquare,
+} from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -16,16 +19,34 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar'
 
-const USER_NAV = [
-  { href: '/',          label: 'Resumen',   icon: LayoutDashboard },
-  { href: '/coleccion', label: 'Colección', icon: Grid3X3 },
-]
-
 const ADMIN_NAV = [
   { href: '/admin', label: 'Usuarios', icon: Users },
 ]
 
-export function AppSidebar({ username, role }: { username: string; role: string }) {
+const ADMIN_NAV_STATIC = [
+  { href: '/',          label: 'Resumen',   icon: LayoutDashboard },
+  { href: '/coleccion', label: 'Colección', icon: Grid3X3 },
+  { href: '/buscar',    label: 'Buscar intercambios', icon: Search },
+]
+
+type NavItem = {
+  href: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  badge?: number
+}
+
+export function AppSidebar({
+  username,
+  role,
+  exchangeCount = 0,
+  messageCount = 0,
+}: {
+  username: string
+  role: string
+  exchangeCount?: number
+  messageCount?: number
+}) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -35,7 +56,15 @@ export function AppSidebar({ username, role }: { username: string; role: string 
     router.refresh()
   }
 
-  const navItems = role === 'superadmin' ? ADMIN_NAV : USER_NAV
+  const navItems: NavItem[] = role === 'superadmin'
+    ? ADMIN_NAV
+    : [
+        { href: '/',              label: 'Resumen',             icon: LayoutDashboard },
+        { href: '/coleccion',     label: 'Colección',           icon: Grid3X3 },
+        { href: '/buscar',        label: 'Buscar intercambios', icon: Search },
+        { href: '/intercambios',  label: 'Mis intercambios',    icon: ArrowLeftRight, badge: exchangeCount },
+        { href: '/mensajes',      label: 'Mensajes',            icon: MessageSquare,  badge: messageCount },
+      ]
 
   return (
     <Sidebar>
@@ -60,14 +89,19 @@ export function AppSidebar({ username, role }: { username: string; role: string 
           <SidebarGroupLabel>Navegación</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map(({ href, label, icon: Icon }) => (
+              {navItems.map(({ href, label, icon: Icon, badge }) => (
                 <SidebarMenuItem key={href}>
                   <SidebarMenuButton
                     isActive={pathname === href}
                     render={<Link href={href} />}
                   >
                     <Icon className="w-4 h-4" />
-                    <span>{label}</span>
+                    <span className="flex-1">{label}</span>
+                    {badge != null && badge > 0 && (
+                      <span className="ml-auto w-5 h-5 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center font-medium">
+                        {badge > 9 ? '9+' : badge}
+                      </span>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

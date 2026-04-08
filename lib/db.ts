@@ -1,6 +1,8 @@
 import { neon } from '@neondatabase/serverless'
 import type { Card, CardType, Position } from './types'
 import { hashPassword } from './users'
+import { initExchanges } from './exchanges'
+import { initMessages } from './messages'
 
 function sql() {
   if (!process.env.DATABASE_URL) {
@@ -80,6 +82,9 @@ export async function initDb() {
     SELECT '521', 'Courtois', 'Real Madrid', 'P', 'NUEVO_BALON_ORO', TRUE
     WHERE NOT EXISTS (SELECT 1 FROM cards WHERE number = '521')
   `
+
+  await initExchanges()
+  await initMessages()
 
   // Seed cards catalog
   const [{ count }] = await db`SELECT COUNT(*)::int AS count FROM cards`
