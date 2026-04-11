@@ -38,9 +38,9 @@ export function LoginForm() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-6">
-        <div className="text-center space-y-1">
-          <h1 className="text-2xl font-bold">Adrenalyn XL</h1>
-          <p className="text-muted-foreground text-sm">LaLiga 2025-26 · Panel de control</p>
+        <div className="text-center space-y-3">
+          <img src="/logo.png" alt="MisCromos" style={{ height: 200, width: 'auto', display: 'block', margin: '0 auto' }} />
+          <p className="text-muted-foreground text-sm">Gestiona tu colección e intercambia cromos con otros usuarios</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border p-6 bg-card">

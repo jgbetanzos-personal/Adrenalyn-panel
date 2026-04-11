@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
-  LayoutDashboard, Grid3X3, LogOut, Eye, Users, ShieldCheck,
+  LayoutDashboard, Grid3X3, LogOut, Eye, Users,
   Search, ArrowLeftRight, MessageSquare,
 } from 'lucide-react'
 import {
@@ -68,19 +68,12 @@ export function AppSidebar({
 
   return (
     <Sidebar>
-      <SidebarHeader className="px-4 py-4 border-b">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center text-white font-bold text-sm">
-            {role === 'superadmin' ? <ShieldCheck className="w-4 h-4" /> : 'AX'}
-          </div>
-          <div className="leading-tight">
-            <p className="font-semibold text-sm">
-              {role === 'superadmin' ? 'Superadmin' : 'Adrenalyn XL'}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {role === 'superadmin' ? username : 'LaLiga 2025-26'}
-            </p>
-          </div>
+      <SidebarHeader className="px-4 py-3 border-b">
+        <div className="flex flex-col gap-1.5">
+          <img src="/logo-miscromos-transparente.png" alt="MisCromos" style={{ height: 80, width: 'auto', display: 'block', margin: '0 auto' }} />
+          {role === 'superadmin' && (
+            <p className="text-xs text-muted-foreground text-center">{username}</p>
+          )}
         </div>
       </SidebarHeader>
 

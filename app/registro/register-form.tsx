@@ -125,9 +125,10 @@ export function RegisterForm() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-10">
       <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-1">
+        <div className="text-center space-y-3">
+          <img src="/logo.png" alt="MisCromos" style={{ height: 140, width: 'auto', display: 'block', margin: '0 auto' }} />
           <h1 className="text-2xl font-bold">Crear cuenta</h1>
-          <p className="text-muted-foreground text-sm">Adrenalyn XL LaLiga 2025-26</p>
+          <p className="text-muted-foreground text-sm">Gestiona tu colección, descubre lo que te falta e intercambia cromos con otros coleccionistas</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border p-6 bg-card">

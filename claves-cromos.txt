@@ -1,0 +1,10 @@
+usuario: gorka
+password: g0rk42015
+
+
+usuario:superadmin
+pass:sup3r4admin31
+
+Cromosrepes
+gorka15
+gork42015
