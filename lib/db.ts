@@ -11,9 +11,13 @@ function sql() {
   return neon(process.env.DATABASE_URL)
 }
 
+let dbInitialized = false
+
 // ── Schema + Seed ─────────────────────────────────────────────────────────────
 
 export async function initDb() {
+  if (dbInitialized) return
+  dbInitialized = true
   const db = sql()
 
   // Cards catalog (collected/repeated kept for legacy migration)
@@ -83,9 +87,20 @@ export async function initDb() {
     WHERE NOT EXISTS (SELECT 1 FROM cards WHERE number = '521')
   `
 
-  // ── Clean up incorrectly numbered cards from previous migrations ──────────
-  await db`DELETE FROM user_cards WHERE card_id IN (SELECT id FROM cards WHERE type IN ('ESTADIO_BIS','NEW_MASTER'))`
-  await db`DELETE FROM cards WHERE type IN ('ESTADIO_BIS','NEW_MASTER')`
+  // ── One-time cleanup: remove wrong-numbered ESTADIO_BIS/NEW_MASTER cards ───
+  // Only runs if any of them still have numeric-only numbers (old migration)
+  await db`
+    DELETE FROM user_cards WHERE card_id IN (
+      SELECT id FROM cards
+      WHERE type IN ('ESTADIO_BIS','NEW_MASTER')
+        AND number ~ '^[0-9]+$'
+    )
+  `
+  await db`
+    DELETE FROM cards
+    WHERE type IN ('ESTADIO_BIS','NEW_MASTER')
+      AND number ~ '^[0-9]+$'
+  `
 
   // ── Estadio BIS cards (same number as team shield + " BIS") ───────────────
   const ESTADIO_CARDS = [

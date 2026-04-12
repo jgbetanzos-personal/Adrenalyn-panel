@@ -44,7 +44,7 @@ export function CollectionPublic({ cards }: { cards: Card[] }) {
       if (filter === 'collected' && !c.collected) return false
       if (filter === 'repeated' && !c.repeated) return false
       if (filter === 'missing' && c.collected) return false
-      if (!showBis && (c.type === 'BIS' || c.type === 'ESTADIO_BIS')) return false
+      if (!showBis && c.type === 'BIS') return false
       if (!showPlus && c.is_plus) return false
       if (q && !c.name.toLowerCase().includes(q) && !c.team.toLowerCase().includes(q) && !c.number.includes(q)) return false
       return true
@@ -127,7 +127,11 @@ export function CollectionPublic({ cards }: { cards: Card[] }) {
       {/* Regulares por equipo */}
       <PublicSectionBlock title="Cromos Regulares por Equipo">
         {SECTIONS.map((team) => {
-          const teamCards = filtered.filter(c => c.team === team && (c.type === 'REGULAR' || c.type === 'ESCUDO'))
+          const isTeamCard = (c: Card) => c.team === team && (c.type === 'REGULAR' || c.type === 'ESCUDO' || c.type === 'ESTADIO_BIS')
+          const teamCards = filtered.filter(isTeamCard).sort((a, b) => {
+            const order = (c: Card) => c.type === 'ESCUDO' ? 0 : c.type === 'ESTADIO_BIS' ? 1 : 2
+            return order(a) - order(b) || a.id - b.id
+          })
           if (!teamCards.length) return null
           return (
             <PublicTeamSection
@@ -173,26 +177,6 @@ export function CollectionPublic({ cards }: { cards: Card[] }) {
                 title={`${team} BIS`}
                 cards={bisCards}
                 prog={sectionProgress(bisCards)}
-                showTeamBadge
-              />
-            )
-          })}
-        </PublicSectionBlock>
-      )}
-
-      <Separator />
-
-      {showBis && (
-        <PublicSectionBlock title="Estadio BIS">
-          {SECTIONS.map((team) => {
-            const estadioCards = filtered.filter(c => c.team === team && c.type === 'ESTADIO_BIS')
-            if (!estadioCards.length) return null
-            return (
-              <PublicTeamSection
-                key={team}
-                title={`${team} - Estadio`}
-                cards={estadioCards}
-                prog={sectionProgress(estadioCards)}
                 showTeamBadge
               />
             )

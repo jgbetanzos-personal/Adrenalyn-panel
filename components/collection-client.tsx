@@ -45,7 +45,7 @@ export function CollectionClient({ initialCards }: { initialCards: Card[] }) {
       if (filter === 'missing'   && c.collected) return false
       if (filter === 'collected' && !c.collected) return false
       if (filter === 'repeated'  && !c.repeated) return false
-      if (!showBis  && (c.type === 'BIS' || c.type === 'ESTADIO_BIS')) return false
+      if (!showBis  && c.type === 'BIS') return false
       if (!showPlus && c.is_plus) return false
       if (q && !c.name.toLowerCase().includes(q) && !c.team.toLowerCase().includes(q) && !c.number.includes(q)) return false
       return true
@@ -120,10 +120,14 @@ export function CollectionClient({ initialCards }: { initialCards: Card[] }) {
         </div>
       </div>
 
-      {/* Regulares por equipo */}
+      {/* Regulares por equipo (incluye Estadio BIS tras el escudo) */}
       <SectionBlock title="Cromos Regulares por Equipo">
         {SECTIONS.map((team) => {
-          const teamCards = filtered.filter(c => c.team === team && (c.type === 'REGULAR' || c.type === 'ESCUDO'))
+          const isTeamCard = (c: Card) => c.team === team && (c.type === 'REGULAR' || c.type === 'ESCUDO' || c.type === 'ESTADIO_BIS')
+          const teamCards = filtered.filter(isTeamCard).sort((a, b) => {
+            const order = (c: Card) => c.type === 'ESCUDO' ? 0 : c.type === 'ESTADIO_BIS' ? 1 : 2
+            return order(a) - order(b) || a.id - b.id
+          })
           if (!teamCards.length) return null
           return (
             <TeamSection
@@ -132,7 +136,7 @@ export function CollectionClient({ initialCards }: { initialCards: Card[] }) {
               cards={teamCards}
               prog={sectionProgress(teamCards)}
               showTeamBadge
-              allCardsForTeam={cards.filter(c => c.team === team && (c.type === 'REGULAR' || c.type === 'ESCUDO'))}
+              allCardsForTeam={cards.filter(isTeamCard)}
               onBulkUpdate={onBulkUpdate}
             />
           )
@@ -177,29 +181,6 @@ export function CollectionClient({ initialCards }: { initialCards: Card[] }) {
                 prog={sectionProgress(bisCards)}
                 showTeamBadge
                 allCardsForTeam={cards.filter(c => c.team === team && c.type === 'BIS')}
-                onBulkUpdate={onBulkUpdate}
-              />
-            )
-          })}
-        </SectionBlock>
-      )}
-
-      <Separator />
-
-      {/* Estadio BIS */}
-      {showBis && (
-        <SectionBlock title="Estadio BIS">
-          {SECTIONS.map((team) => {
-            const estadioCards = filtered.filter(c => c.team === team && c.type === 'ESTADIO_BIS')
-            if (!estadioCards.length) return null
-            return (
-              <TeamSection
-                key={team}
-                title={`${team} - Estadio`}
-                cards={estadioCards}
-                prog={sectionProgress(estadioCards)}
-                showTeamBadge
-                allCardsForTeam={cards.filter(c => c.team === team && c.type === 'ESTADIO_BIS')}
                 onBulkUpdate={onBulkUpdate}
               />
             )
