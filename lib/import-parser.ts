@@ -13,6 +13,9 @@ import type { ImportEntry } from './db'
  *
  * The `defaultState` is used when no state label is present.
  */
+// Special non-numeric card number formats
+const SPECIAL_NUMBER_RE = /^(NM\s*\d{1,2}|\d+\s+BIS)$/i
+
 export function parseImportText(
   raw: string,
   defaultState: 'collected' | 'repeated' | 'missing'

@@ -28,7 +28,7 @@ export default async function VerPage() {
           {usersWithStats.map((u) => (
             <Link
               key={u.id}
-              href={`/ver/${u.username}`}
+              href={`/ver/${encodeURIComponent(u.username)}`}
               className="rounded-xl border p-5 flex items-center gap-4 hover:bg-muted/50 transition-colors"
             >
               <div className="shrink-0">

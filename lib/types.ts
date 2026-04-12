@@ -25,6 +25,8 @@ export type CardType =
   | 'CARD_FANTASTICA'
   | 'ESPECIAL_AUTOGRAFO'
   | 'BIS'
+  | 'ESTADIO_BIS'
+  | 'NEW_MASTER'
 
 export type Position = 'P' | 'D' | 'M' | 'DE' | 'C' | '-'
 

@@ -30,7 +30,7 @@ const PLUS_TYPES: CardType[] = [
   'CARD_FANTASTICA', 'ESPECIAL_AUTOGRAFO',
 ]
 
-type FilterMode = 'all' | 'collected' | 'repeated'
+type FilterMode = 'all' | 'collected' | 'repeated' | 'missing'
 
 export function CollectionPublic({ cards }: { cards: Card[] }) {
   const [search, setSearch] = useState('')
@@ -43,7 +43,8 @@ export function CollectionPublic({ cards }: { cards: Card[] }) {
     return cards.filter((c) => {
       if (filter === 'collected' && !c.collected) return false
       if (filter === 'repeated' && !c.repeated) return false
-      if (!showBis && c.type === 'BIS') return false
+      if (filter === 'missing' && c.collected) return false
+      if (!showBis && (c.type === 'BIS' || c.type === 'ESTADIO_BIS')) return false
       if (!showPlus && c.is_plus) return false
       if (q && !c.name.toLowerCase().includes(q) && !c.team.toLowerCase().includes(q) && !c.number.includes(q)) return false
       return true
@@ -92,6 +93,7 @@ export function CollectionPublic({ cards }: { cards: Card[] }) {
           {([
             ['all',       'Todos'],
             ['collected', 'Conseguidos'],
+            ['missing',   'Faltan'],
             ['repeated',  'Repetidos'],
           ] as [FilterMode, string][]).map(([m, label]) => (
             <button
@@ -99,7 +101,9 @@ export function CollectionPublic({ cards }: { cards: Card[] }) {
               onClick={() => setFilter(m)}
               className={`px-3 py-2 transition-colors ${
                 filter === m
-                  ? m === 'repeated' ? 'bg-purple-500 text-white' : 'bg-orange-500 text-white'
+                  ? m === 'repeated' ? 'bg-purple-500 text-white'
+                  : m === 'missing'  ? 'bg-slate-600 text-white'
+                  : 'bg-orange-500 text-white'
                   : 'hover:bg-muted'
               }`}
             >
@@ -175,6 +179,43 @@ export function CollectionPublic({ cards }: { cards: Card[] }) {
           })}
         </PublicSectionBlock>
       )}
+
+      <Separator />
+
+      {showBis && (
+        <PublicSectionBlock title="Estadio BIS">
+          {SECTIONS.map((team) => {
+            const estadioCards = filtered.filter(c => c.team === team && c.type === 'ESTADIO_BIS')
+            if (!estadioCards.length) return null
+            return (
+              <PublicTeamSection
+                key={team}
+                title={`${team} - Estadio`}
+                cards={estadioCards}
+                prog={sectionProgress(estadioCards)}
+                showTeamBadge
+              />
+            )
+          })}
+        </PublicSectionBlock>
+      )}
+
+      <Separator />
+
+      <PublicSectionBlock title="New Master">
+        {(() => {
+          const nmCards = filtered.filter(c => c.type === 'NEW_MASTER')
+          if (!nmCards.length) return null
+          return (
+            <PublicTeamSection
+              title="New Master"
+              cards={nmCards}
+              prog={sectionProgress(nmCards)}
+              colorClass="bg-emerald-600 text-white"
+            />
+          )
+        })()}
+      </PublicSectionBlock>
 
       <Separator />
 

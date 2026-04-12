@@ -66,13 +66,13 @@ export default async function AdminPage() {
             {/* Acciones */}
             <div className="shrink-0 flex flex-col gap-2 w-full sm:w-auto">
               <Link
-                href={`/admin/${u.username}`}
+                href={`/admin/${encodeURIComponent(u.username)}`}
                 className="rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium px-3 py-1.5 transition-colors text-center"
               >
                 Ver colección
               </Link>
               <Link
-                href={`/ver/${u.username}`}
+                href={`/ver/${encodeURIComponent(u.username)}`}
                 target="_blank"
                 className="rounded-lg border text-xs font-medium px-3 py-1.5 transition-colors hover:bg-muted text-center"
               >

@@ -28,6 +28,8 @@ const TYPE_CONFIG: Record<CardType, { label: string; color: string }> = {
   CARD_FANTASTICA:       { label: 'Card Fantástica',    color: 'bg-pink-200 text-pink-800' },
   ESPECIAL_AUTOGRAFO:    { label: 'Autógrafo',          color: 'bg-fuchsia-100 text-fuchsia-700' },
   BIS:                   { label: 'BIS',                color: 'bg-lime-100 text-lime-700' },
+  ESTADIO_BIS:           { label: 'Estadio BIS',        color: 'bg-lime-200 text-lime-800' },
+  NEW_MASTER:            { label: 'New Master',         color: 'bg-emerald-600 text-white' },
 }
 
 export function TypeLabel({ type }: { type: CardType }) {

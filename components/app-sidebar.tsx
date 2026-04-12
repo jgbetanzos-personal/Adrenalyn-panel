@@ -109,7 +109,7 @@ export function AppSidebar({
           {role !== 'superadmin' && (
             <>
               <SidebarMenuItem>
-                <SidebarMenuButton render={<Link href={`/ver/${username}`} target="_blank" />}>
+                <SidebarMenuButton render={<Link href={`/ver/${encodeURIComponent(username)}`} target="_blank" />}>
                   <Eye className="w-4 h-4" />
                   <span>Mi página pública</span>
                 </SidebarMenuButton>

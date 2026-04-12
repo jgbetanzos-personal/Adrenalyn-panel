@@ -83,6 +83,67 @@ export async function initDb() {
     WHERE NOT EXISTS (SELECT 1 FROM cards WHERE number = '521')
   `
 
+  // ── Clean up incorrectly numbered cards from previous migrations ──────────
+  await db`DELETE FROM user_cards WHERE card_id IN (SELECT id FROM cards WHERE type IN ('ESTADIO_BIS','NEW_MASTER'))`
+  await db`DELETE FROM cards WHERE type IN ('ESTADIO_BIS','NEW_MASTER')`
+
+  // ── Estadio BIS cards (same number as team shield + " BIS") ───────────────
+  const ESTADIO_CARDS = [
+    ['1 BIS',   'D. Alavés - Estadio',         'D. Alavés'],
+    ['19 BIS',  'Athletic Club - Estadio',      'Athletic Club'],
+    ['37 BIS',  'Atlético de Madrid - Estadio', 'Atlético de Madrid'],
+    ['55 BIS',  'FC Barcelona - Estadio',       'FC Barcelona'],
+    ['73 BIS',  'Real Betis - Estadio',         'Real Betis'],
+    ['91 BIS',  'RC Celta - Estadio',           'RC Celta'],
+    ['109 BIS', 'Elche CF - Estadio',           'Elche CF'],
+    ['127 BIS', 'RCD Espanyol - Estadio',       'RCD Espanyol'],
+    ['145 BIS', 'Getafe CF - Estadio',          'Getafe CF'],
+    ['163 BIS', 'Girona FC - Estadio',          'Girona FC'],
+    ['181 BIS', 'Levante UD - Estadio',         'Levante UD'],
+    ['199 BIS', 'Real Madrid - Estadio',        'Real Madrid'],
+    ['217 BIS', 'RCD Mallorca - Estadio',       'RCD Mallorca'],
+    ['235 BIS', 'CA Osasuna - Estadio',         'CA Osasuna'],
+    ['253 BIS', 'Real Oviedo - Estadio',        'Real Oviedo'],
+    ['271 BIS', 'Rayo Vallecano - Estadio',     'Rayo Vallecano'],
+    ['289 BIS', 'Real Sociedad - Estadio',      'Real Sociedad'],
+    ['307 BIS', 'Sevilla FC - Estadio',         'Sevilla FC'],
+    ['325 BIS', 'Valencia CF - Estadio',        'Valencia CF'],
+    ['343 BIS', 'Villarreal CF - Estadio',      'Villarreal CF'],
+  ] as const
+  for (const [num, name, team] of ESTADIO_CARDS) {
+    await db`
+      INSERT INTO cards (number, name, team, position, type, is_plus)
+      SELECT ${num}, ${name}, ${team}, '-', 'ESTADIO_BIS', FALSE
+      WHERE NOT EXISTS (SELECT 1 FROM cards WHERE number = ${num} AND type = 'ESTADIO_BIS')
+    `
+  }
+
+  // ── New Master cards (NM 01-15) ────────────────────────────────────────────
+  const NM_CARDS = [
+    ['NM 01', 'NM 01 Vlachodimos',   'Sevilla FC'],
+    ['NM 02', 'NM 02 Radu',          'RC Celta'],
+    ['NM 03', 'NM 03 Trent',         'Real Madrid'],
+    ['NM 04', 'NM 04 Caleta-Car',    'Real Sociedad'],
+    ['NM 05', 'NM 05 Hancko',        'Atlético de Madrid'],
+    ['NM 06', 'NM 06 Suazo',         'Sevilla FC'],
+    ['NM 07', 'NM 07 Nico González', 'Atlético de Madrid'],
+    ['NM 08', 'NM 08 Santamaría',    'Valencia CF'],
+    ['NM 09', 'NM 09 Amrabat',       'Real Betis'],
+    ['NM 10', 'NM 10 Mastantuono',   'Real Madrid'],
+    ['NM 11', 'NM 11 Almada',        'Atlético de Madrid'],
+    ['NM 12', 'NM 12 Dolan',         'RCD Espanyol'],
+    ['NM 13', 'NM 13 Mikautadze',    'Villarreal CF'],
+    ['NM 14', 'NM 14 Rashford',      'FC Barcelona'],
+    ['NM 15', 'NM 15 Oluwaseyi',     'Villarreal CF'],
+  ] as const
+  for (const [num, name, team] of NM_CARDS) {
+    await db`
+      INSERT INTO cards (number, name, team, position, type, is_plus)
+      SELECT ${num}, ${name}, ${team}, '-', 'NEW_MASTER', FALSE
+      WHERE NOT EXISTS (SELECT 1 FROM cards WHERE number = ${num})
+    `
+  }
+
   await initExchanges()
   await initMessages()
 

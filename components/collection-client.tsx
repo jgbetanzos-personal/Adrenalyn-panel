@@ -45,7 +45,7 @@ export function CollectionClient({ initialCards }: { initialCards: Card[] }) {
       if (filter === 'missing'   && c.collected) return false
       if (filter === 'collected' && !c.collected) return false
       if (filter === 'repeated'  && !c.repeated) return false
-      if (!showBis  && c.type === 'BIS') return false
+      if (!showBis  && (c.type === 'BIS' || c.type === 'ESTADIO_BIS')) return false
       if (!showPlus && c.is_plus) return false
       if (q && !c.name.toLowerCase().includes(q) && !c.team.toLowerCase().includes(q) && !c.number.includes(q)) return false
       return true
@@ -183,6 +183,49 @@ export function CollectionClient({ initialCards }: { initialCards: Card[] }) {
           })}
         </SectionBlock>
       )}
+
+      <Separator />
+
+      {/* Estadio BIS */}
+      {showBis && (
+        <SectionBlock title="Estadio BIS">
+          {SECTIONS.map((team) => {
+            const estadioCards = filtered.filter(c => c.team === team && c.type === 'ESTADIO_BIS')
+            if (!estadioCards.length) return null
+            return (
+              <TeamSection
+                key={team}
+                title={`${team} - Estadio`}
+                cards={estadioCards}
+                prog={sectionProgress(estadioCards)}
+                showTeamBadge
+                allCardsForTeam={cards.filter(c => c.team === team && c.type === 'ESTADIO_BIS')}
+                onBulkUpdate={onBulkUpdate}
+              />
+            )
+          })}
+        </SectionBlock>
+      )}
+
+      <Separator />
+
+      {/* New Master */}
+      <SectionBlock title="New Master">
+        {(() => {
+          const nmCards = filtered.filter(c => c.type === 'NEW_MASTER')
+          if (!nmCards.length) return null
+          return (
+            <TeamSection
+              title="New Master"
+              cards={nmCards}
+              prog={sectionProgress(nmCards)}
+              colorClass="bg-emerald-600 text-white"
+              allCardsForTeam={cards.filter(c => c.type === 'NEW_MASTER')}
+              onBulkUpdate={onBulkUpdate}
+            />
+          )
+        })()}
+      </SectionBlock>
 
       <Separator />
 
