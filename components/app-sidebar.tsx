@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Grid3X3, LogOut, Eye, Users,
-  Search, ArrowLeftRight, MessageSquare,
+  Search, ArrowLeftRight, MessageSquare, Upload,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -64,6 +64,7 @@ export function AppSidebar({
         { href: '/buscar',        label: 'Buscar intercambios', icon: Search },
         { href: '/intercambios',  label: 'Mis intercambios',    icon: ArrowLeftRight, badge: exchangeCount },
         { href: '/mensajes',      label: 'Mensajes',            icon: MessageSquare,  badge: messageCount },
+        { href: '/importar',      label: 'Importar colección',  icon: Upload },
       ]
 
   return (

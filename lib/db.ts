@@ -210,6 +210,51 @@ export async function bulkSetCollected(userId: number, ids: number[], collected:
   `
 }
 
+// Import entries: list of card numbers with their state
+export type ImportEntry = { number: number; collected: boolean; repeated: boolean }
+
+export async function bulkImport(
+  userId: number,
+  entries: ImportEntry[],
+  mode: 'merge' | 'replace' = 'merge'
+): Promise<{ imported: number; notFound: number[] }> {
+  await initDb()
+  const db = sql()
+
+  // Get all valid card numbers → ids
+  const numbers = entries.map(e => e.number)
+  const rows = await db`
+    SELECT id, number FROM cards WHERE number = ANY(${numbers}::int[])
+  ` as { id: number; number: number }[]
+
+  const numberToId = new Map(rows.map(r => [r.number, r.id]))
+  const notFound = numbers.filter(n => !numberToId.has(n))
+
+  if (mode === 'replace') {
+    // Clear existing state for these cards before importing
+    const ids = rows.map(r => r.id)
+    if (ids.length > 0) {
+      await db`DELETE FROM user_cards WHERE user_id = ${userId} AND card_id = ANY(${ids}::int[])`
+    }
+  }
+
+  const toInsert = entries
+    .filter(e => numberToId.has(e.number))
+    .map(e => ({ userId, cardId: numberToId.get(e.number)!, collected: e.collected, repeated: e.repeated }))
+
+  for (const entry of toInsert) {
+    await db`
+      INSERT INTO user_cards (user_id, card_id, collected, repeated)
+      VALUES (${entry.userId}, ${entry.cardId}, ${entry.collected}, ${entry.repeated})
+      ON CONFLICT (user_id, card_id) DO UPDATE
+        SET collected = user_cards.collected OR ${entry.collected},
+            repeated  = user_cards.repeated  OR ${entry.repeated}
+    `
+  }
+
+  return { imported: toInsert.length, notFound }
+}
+
 export async function getStats(userId: number) {
   await initDb()
   const db = sql()
