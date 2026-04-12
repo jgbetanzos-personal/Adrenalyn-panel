@@ -12,7 +12,8 @@ export default async function VerUserPage({
 }: {
   params: Promise<{ username: string }>
 }) {
-  const { username } = await params
+  const { username: rawUsername } = await params
+  const username = decodeURIComponent(rawUsername)
   const user = await getUserByUsername(username)
 
   if (!user || user.role === 'superadmin') notFound()

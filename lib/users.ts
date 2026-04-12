@@ -24,7 +24,9 @@ export async function verifyPassword(password: string, stored: string): Promise<
 
 export async function getUserByUsername(username: string): Promise<DbUser & { password_hash: string } | null> {
   const db = sql()
-  const rows = await db`SELECT * FROM users WHERE username = ${username} LIMIT 1`
+  // Case-insensitive and accent-insensitive lookup
+  // unaccent() requires pg_trgm or unaccent extension; fallback to lower() only
+  const rows = await db`SELECT * FROM users WHERE lower(username) = lower(${username}) LIMIT 1`
   return (rows[0] ?? null) as unknown as (DbUser & { password_hash: string }) | null
 }
 
