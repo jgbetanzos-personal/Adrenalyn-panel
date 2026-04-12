@@ -164,7 +164,10 @@ export function ImportForm() {
         {/* Aviso CromosRepes */}
         {source === 'cromosrepes' && (
           <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 space-y-2">
-            <p className="text-sm font-semibold text-amber-800">⚠️ Antes de copiar, sigue estos pasos:</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-semibold text-amber-800">⚠️ Antes de copiar, sigue estos pasos:</p>
+              <span className="inline-flex items-center rounded-full bg-orange-100 border border-orange-300 px-2 py-0.5 text-xs font-semibold text-orange-700">🧪 BETA — puede contener errores</span>
+            </div>
             <ol className="text-xs text-amber-700 space-y-1.5 list-decimal list-inside">
               <li>Entra en tu lista en <strong>cromosrepes.com</strong></li>
               <li>

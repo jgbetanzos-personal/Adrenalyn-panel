@@ -318,7 +318,7 @@ export async function bulkImport(
   userId: number,
   entries: ImportEntry[],
   mode: 'merge' | 'replace' = 'merge'
-): Promise<{ imported: number; notFound: number[] }> {
+): Promise<{ imported: number; notFound: string[] }> {
   await initDb()
   const db = sql()
 
