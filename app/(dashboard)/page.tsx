@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { TYPE_CONFIG } from '@/components/type-label'
 import type { CardType } from '@/lib/types'
+import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,9 +18,17 @@ export default async function OverviewPage() {
 
   return (
     <div className="space-y-8 max-w-5xl">
-      <div>
-        <h1 className="text-2xl font-bold">Resumen de la Colección</h1>
-        <p className="text-muted-foreground text-sm mt-1">Adrenalyn XL LaLiga 2025-26</p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Resumen de la Colección</h1>
+          <p className="text-muted-foreground text-sm mt-1">Adrenalyn XL LaLiga 2025-26</p>
+        </div>
+        <Link
+          href="/coleccion"
+          className="rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium px-4 py-2 text-sm transition-colors"
+        >
+          Completar colección →
+        </Link>
       </div>
 
       {/* KPIs principales */}
