@@ -73,6 +73,10 @@ export async function initDb() {
     WHERE number='518' AND name != 'Hansi Flick'
   `
   await db`
+    UPDATE cards SET name='NBO Pedri (Autógrafo)'
+    WHERE number='522' AND name != 'NBO Pedri (Autógrafo)'
+  `
+  await db`
     UPDATE cards SET name='Marcelino García', team='Villarreal CF', position='-', type='MASTER_MISTER'
     WHERE number='519' AND name != 'Marcelino García'
   `
@@ -159,6 +163,10 @@ export async function initDb() {
     `
   }
 
+  // ── Remove EDL / Míticos / Momentum cards (pending clarification) ─────────
+  await db`DELETE FROM user_cards WHERE card_id IN (SELECT id FROM cards WHERE type IN ('EDICION_LIMITADA','MITICOS','MOMENTUM'))`
+  await db`DELETE FROM cards WHERE type IN ('EDICION_LIMITADA','MITICOS','MOMENTUM')`
+
   await initExchanges()
   await initMessages()
 
@@ -171,6 +179,19 @@ export async function initDb() {
   // Seed users
   await seedUsers()
 
+  // ── Test user gorka31 (cloned from gorka, empty collection) ───────────────
+  const gorka31Exists = await db`SELECT 1 FROM users WHERE username = 'gorka31' LIMIT 1`
+  if (!gorka31Exists.length) {
+    const gorka = await db`SELECT name, surname, email, address, postal_code FROM users WHERE username = 'gorka' LIMIT 1`
+    if (gorka.length) {
+      const g = gorka[0] as { name: string; surname: string; email: string | null; address: string | null; postal_code: string | null }
+      const hash = await hashPassword('gorka31')
+      await db`
+        INSERT INTO users (username, password_hash, name, surname, email, address, postal_code, role)
+        VALUES ('gorka31', ${hash}, ${g.name}, ${g.surname}, ${g.email ?? ''}, ${g.address ?? ''}, ${g.postal_code ?? ''}, 'user')
+      `
+    }
+  }
   // Migrate existing collected/repeated data from old cards table to gorka's user_cards
   await db`
     INSERT INTO user_cards (user_id, card_id, collected, repeated)
@@ -252,10 +273,13 @@ export async function toggleCard(
   const db = sql()
 
   if (field === 'repeated') {
+    // repeated=true implies collected=true (you have it if you have extras)
     await db`
       INSERT INTO user_cards (user_id, card_id, collected, repeated)
-      VALUES (${userId}, ${cardId}, FALSE, TRUE)
-      ON CONFLICT (user_id, card_id) DO UPDATE SET repeated = NOT user_cards.repeated
+      VALUES (${userId}, ${cardId}, TRUE, TRUE)
+      ON CONFLICT (user_id, card_id) DO UPDATE
+        SET repeated  = NOT user_cards.repeated,
+            collected = CASE WHEN NOT user_cards.repeated THEN TRUE ELSE user_cards.collected END
     `
   } else {
     await db`
@@ -287,7 +311,8 @@ export async function bulkSetCollected(userId: number, ids: number[], collected:
 }
 
 // Import entries: list of card numbers with their state
-export type ImportEntry = { number: number; collected: boolean; repeated: boolean }
+// number can be numeric ("45") or special ("45 BIS", "NM 08")
+export type ImportEntry = { number: number | string; collected: boolean; repeated: boolean }
 
 export async function bulkImport(
   userId: number,
@@ -297,11 +322,11 @@ export async function bulkImport(
   await initDb()
   const db = sql()
 
-  // Get all valid card numbers → ids
-  const numbers = entries.map(e => e.number)
+  // Get all valid card numbers → ids (numbers can be "45", "45 BIS", "NM 08")
+  const numbers = entries.map(e => String(e.number))
   const rows = await db`
-    SELECT id, number FROM cards WHERE number = ANY(${numbers}::int[])
-  ` as { id: number; number: number }[]
+    SELECT id, number FROM cards WHERE number = ANY(${numbers}::text[])
+  ` as { id: number; number: string }[]
 
   const numberToId = new Map(rows.map(r => [r.number, r.id]))
   const notFound = numbers.filter(n => !numberToId.has(n))
@@ -315,20 +340,42 @@ export async function bulkImport(
   }
 
   const toInsert = entries
-    .filter(e => numberToId.has(e.number))
-    .map(e => ({ userId, cardId: numberToId.get(e.number)!, collected: e.collected, repeated: e.repeated }))
+    .filter(e => numberToId.has(String(e.number)))
+    .map(e => ({ userId, cardId: numberToId.get(String(e.number))!, collected: e.collected, repeated: e.repeated }))
 
   for (const entry of toInsert) {
     await db`
       INSERT INTO user_cards (user_id, card_id, collected, repeated)
       VALUES (${entry.userId}, ${entry.cardId}, ${entry.collected}, ${entry.repeated})
       ON CONFLICT (user_id, card_id) DO UPDATE
-        SET collected = user_cards.collected OR ${entry.collected},
-            repeated  = user_cards.repeated  OR ${entry.repeated}
+        -- repeated=true always implies collected=true
+        SET repeated  = user_cards.repeated  OR ${entry.repeated},
+            collected = user_cards.collected OR ${entry.collected} OR ${entry.repeated}
     `
   }
 
   return { imported: toInsert.length, notFound }
+}
+
+/**
+ * Marks as collected all cards that have NO user_cards row yet for this user.
+ * Cards explicitly set as missing (collected=false) or repeated are left untouched.
+ * Returns the number of cards newly marked as collected.
+ */
+export async function markUntouchedAsCollected(userId: number): Promise<number> {
+  await initDb()
+  const db = sql()
+  const result = await db`
+    INSERT INTO user_cards (user_id, card_id, collected, repeated)
+    SELECT ${userId}, c.id, TRUE, FALSE
+    FROM cards c
+    WHERE NOT EXISTS (
+      SELECT 1 FROM user_cards uc
+      WHERE uc.user_id = ${userId} AND uc.card_id = c.id
+    )
+    RETURNING card_id
+  `
+  return result.length
 }
 
 export async function getStats(userId: number) {
@@ -1005,7 +1052,7 @@ const ALL_CARDS: SeedCard[] = [
   plus(521, 'Courtois', 'Real Madrid', 'P', 'NUEVO_BALON_ORO'),
 
   // ─── PLUS: ESPECIAL AUTÓGRAFO (522) ──────────────────────────────────────────
-  plus(522, 'Pedri (Autógrafo)', 'FC Barcelona', 'M', 'ESPECIAL_AUTOGRAFO'),
+  plus(522, 'NBO Pedri (Autógrafo)', 'FC Barcelona', 'M', 'ESPECIAL_AUTOGRAFO'),
 
   // ─── BIS ─────────────────────────────────────────────────────────────────────
   bis(7,   'Garcés',           'D. Alavés',          '-'),

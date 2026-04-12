@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { bulkImport } from '@/lib/db'
-import { parseImportText } from '@/lib/import-parser'
+import { parseImportText, parseCromosRepes } from '@/lib/import-parser'
 
 export async function POST(req: NextRequest) {
   const session = await getSession()
@@ -11,16 +11,24 @@ export async function POST(req: NextRequest) {
     text: string
     defaultState: 'collected' | 'repeated' | 'missing'
     mode: 'merge' | 'replace'
+    source?: 'manual' | 'cromosrepes'
     confirm?: boolean
   }
 
-  const { text, defaultState, mode, confirm = false } = body
+  const { text, defaultState, mode, source = 'manual', confirm = false } = body
 
   if (!text?.trim()) {
     return NextResponse.json({ error: 'No hay datos para importar' }, { status: 400 })
   }
 
-  const { entries, unrecognized } = parseImportText(text, defaultState)
+  let entries, unrecognized, faltasCount = 0, repesCount = 0
+
+  if (source === 'cromosrepes') {
+    const parsed = parseCromosRepes(text);
+    ({ entries, unrecognized, faltasCount, repesCount } = parsed)
+  } else {
+    ({ entries, unrecognized } = parseImportText(text, defaultState))
+  }
 
   if (entries.length === 0) {
     return NextResponse.json({ error: 'No se reconoció ningún número de cromo' }, { status: 400 })
@@ -28,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   // Preview mode: just return what was parsed without saving
   if (!confirm) {
-    return NextResponse.json({ preview: true, entries, unrecognized })
+    return NextResponse.json({ preview: true, entries, unrecognized, faltasCount, repesCount })
   }
 
   // Confirmed: save to DB

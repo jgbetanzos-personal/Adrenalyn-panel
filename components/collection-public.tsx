@@ -221,6 +221,7 @@ export function CollectionPublic({ cards }: { cards: Card[] }) {
           })}
         </PublicSectionBlock>
       )}
+
     </div>
   )
 }

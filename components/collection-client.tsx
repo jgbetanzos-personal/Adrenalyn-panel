@@ -231,6 +231,7 @@ export function CollectionClient({ initialCards }: { initialCards: Card[] }) {
           })}
         </SectionBlock>
       )}
+
     </div>
   )
 }

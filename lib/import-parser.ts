@@ -28,7 +28,7 @@ export function parseImportText(
     if (n < 1 || n > 9999 || seen.has(n)) return
     seen.add(n)
     entries.push({
-      number: n,
+      number: String(n),
       collected: state === 'collected',
       repeated: state === 'repeated',
     })
@@ -111,4 +111,123 @@ function resolveState(
   if (/repe|repetido/i.test(label)) return 'repeated'
   if (/falta|missing/i.test(label)) return 'missing'
   return fallback
+}
+
+/**
+ * Parses a CromosRepes copy-paste export.
+ *
+ * CromosRepes exports two sections separated by comma+space: ", "
+ * Each token starts with the card number/identifier followed by descriptive text.
+ *
+ * Recognized number formats:
+ *   123          → plain number
+ *   123 BIS      → BIS card (jugador o estadio)
+ *   123 Bis Stadium Card - Name  → Estadio BIS (same as "123 BIS")
+ *   NM 08        → New Master
+ *   AO01 / EDL01 / MOM / etc. → not in our catalog → unrecognized
+ */
+/**
+ * Extracts card tokens from a comma-separated CromosRepes list segment.
+ * Returns { entries, unrecognized } with the given state applied to all.
+ */
+function parseCromosRepesSegment(
+  segment: string,
+  state: 'collected' | 'repeated' | 'missing',
+  seen: Set<string>,
+  unrecognized: string[]
+): ImportEntry[] {
+  const entries: ImportEntry[] = []
+
+  const tokens = segment.split(/\s*,\s*/).map(t => t.trim()).filter(Boolean)
+
+  for (const token of tokens) {
+    // Skip asterisked items (tachados/esperando)
+    if (token.trimEnd().endsWith('*')) continue
+
+    // Skip UI/header tokens
+    if (/^(Logo|CromosRepes|Repes|Faltas|Editar|Notas|Ayuda|Aviso|Privacidad|Cookies|Tachado|Ocultar|Checklist|Volver|Colecciones|Correo|Cambios|Listas|Buscar|Inicio)/i.test(token)) continue
+
+    // NM 08 / NM 03
+    const nmMatch = token.match(/^NM\s*(\d{1,2})\b/i)
+    if (nmMatch) {
+      const num = `NM ${nmMatch[1].padStart(2, '0')}`
+      if (!seen.has(num)) { seen.add(num); entries.push({ number: num, collected: state === 'collected' || state === 'repeated', repeated: state === 'repeated' }) }
+      continue
+    }
+
+    // 123 Bis Stadium Card / 54 BIS Lookman
+    const bisMatch = token.match(/^(\d+)\s+[Bb][Ii][Ss]\b/)
+    if (bisMatch) {
+      const num = `${bisMatch[1]} BIS`
+      if (!seen.has(num)) { seen.add(num); entries.push({ number: num, collected: state === 'collected' || state === 'repeated', repeated: state === 'repeated' }) }
+      continue
+    }
+
+    // 176-. Joel Roca / 127-. Escudo / 309 Nyland / 471 BO Pedri
+    const numMatch = token.match(/^(\d+)[.\-]*\s/) || token.match(/^(\d+)[.\-]*$/)
+    if (numMatch) {
+      const num = numMatch[1]
+      if (!seen.has(num)) { seen.add(num); entries.push({ number: num, collected: state === 'collected' || state === 'repeated', repeated: state === 'repeated' }) }
+      continue
+    }
+
+    // Everything else (AO, EDL, MOM, Cajas…) → unrecognized
+    const display = token.replace(/\s+/g, ' ').trim()
+    if (display.length > 1) unrecognized.push(display.length > 45 ? display.slice(0, 45) + '…' : display)
+  }
+
+  return entries
+}
+
+/**
+ * Parses a full CromosRepes copy-paste (may include both Faltas and Repes sections).
+ * Auto-detects each section and assigns the correct state.
+ * Asterisked items (tachados) are ignored automatically.
+ */
+export function parseCromosRepes(raw: string): { entries: ImportEntry[]; unrecognized: string[]; faltasCount: number; repesCount: number } {
+  const unrecognized: string[] = []
+  const seen = new Set<string>()
+  let faltasEntries: ImportEntry[] = []
+  let repesEntries: ImportEntry[] = []
+
+  const lines = raw.split(/\r?\n/).map(l => l.trim())
+
+  // Find section boundaries
+  let faltasLine = -1
+  let repesLine = -1
+  for (let i = 0; i < lines.length; i++) {
+    if (/^Faltas\b/i.test(lines[i])) faltasLine = i
+    if (/^Repes\b/i.test(lines[i]))  repesLine  = i
+  }
+
+  // Extract the long comma-separated lines (card lists)
+  // They're the lines with the most commas in each section
+  function findCardLine(fromLine: number, toLine: number): string {
+    const slice = lines.slice(fromLine, toLine === -1 ? undefined : toLine)
+    // The card list line has lots of commas
+    return slice.sort((a, b) => b.split(',').length - a.split(',').length)[0] ?? ''
+  }
+
+  if (faltasLine !== -1) {
+    const segment = findCardLine(faltasLine + 1, repesLine !== -1 ? repesLine : -1)
+    faltasEntries = parseCromosRepesSegment(segment, 'missing', seen, unrecognized)
+  }
+
+  if (repesLine !== -1) {
+    const segment = findCardLine(repesLine + 1, -1)
+    repesEntries = parseCromosRepesSegment(segment, 'repeated', seen, unrecognized)
+  }
+
+  // Fallback: if no sections detected, parse everything as-is with no state assumption
+  if (faltasLine === -1 && repesLine === -1) {
+    const cardLine = findCardLine(0, -1)
+    faltasEntries = parseCromosRepesSegment(cardLine, 'missing', seen, unrecognized)
+  }
+
+  return {
+    entries: [...faltasEntries, ...repesEntries],
+    unrecognized,
+    faltasCount: faltasEntries.length,
+    repesCount: repesEntries.length,
+  }
 }
