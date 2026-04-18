@@ -32,7 +32,7 @@ export default async function MensajesPage() {
           {conversations.map(({ user, lastMessage, lastAt, unread }) => (
             <Link
               key={user.id}
-              href={`/mensajes/${user.username}`}
+              href={`/mensajes/${encodeURIComponent(user.username)}`}
               className="flex items-center gap-4 px-4 py-3 hover:bg-muted/50 transition-colors"
             >
               <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center shrink-0">

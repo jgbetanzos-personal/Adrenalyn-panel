@@ -14,8 +14,8 @@ export default async function ChatPage({
   const session = await getSession()
   if (!session) redirect('/login')
 
-  const { username } = await params
-  const other = await getUserByUsername(username)
+  const { username: rawUsername } = await params
+  const other = await getUserByUsername(decodeURIComponent(rawUsername))
   if (!other) notFound()
 
   const messages = await getMessages(session.userId, other.id)
@@ -44,7 +44,7 @@ export default async function ChatPage({
       <ChatClient
         initialMessages={messages}
         currentUserId={session.userId}
-        otherUsername={username}
+        otherUsername={rawUsername}
       />
     </div>
   )

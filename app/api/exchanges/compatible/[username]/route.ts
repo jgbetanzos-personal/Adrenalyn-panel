@@ -13,7 +13,7 @@ export async function GET(
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { username } = await params
-  const other = await getUserByUsername(username)
+  const other = await getUserByUsername(decodeURIComponent(username))
   if (!other) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
   const cards = await getCompatibleCards(session.userId, other.id)

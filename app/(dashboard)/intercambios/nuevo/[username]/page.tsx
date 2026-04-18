@@ -14,8 +14,8 @@ export default async function NuevoIntercambioPage({
   const session = await getSession()
   if (!session) redirect('/login')
 
-  const { username } = await params
-  const other = await getUserByUsername(username)
+  const { username: rawUsername } = await params
+  const other = await getUserByUsername(decodeURIComponent(rawUsername))
   if (!other) notFound()
 
   if (other.id === session.userId) redirect('/buscar')

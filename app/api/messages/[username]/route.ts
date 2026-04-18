@@ -13,7 +13,7 @@ export async function GET(
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { username } = await params
-  const other = await getUserByUsername(username)
+  const other = await getUserByUsername(decodeURIComponent(username))
   if (!other) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
   const messages = await getMessages(session.userId, other.id)
@@ -28,7 +28,7 @@ export async function POST(
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { username } = await params
-  const other = await getUserByUsername(username)
+  const other = await getUserByUsername(decodeURIComponent(username))
   if (!other) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
   const body = await request.json() as { content: string }

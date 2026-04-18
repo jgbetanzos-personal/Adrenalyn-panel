@@ -59,7 +59,7 @@ export function BuscarClient({ matches }: { matches: MatchUser[] }) {
           </div>
 
           <Link
-            href={`/intercambios/nuevo/${user.username}`}
+            href={`/intercambios/nuevo/${encodeURIComponent(user.username)}`}
             className="mt-auto w-full text-center rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 transition-colors"
           >
             Proponer intercambio
