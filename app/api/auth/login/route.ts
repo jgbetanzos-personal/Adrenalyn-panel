@@ -5,7 +5,8 @@ import { initDb } from '@/lib/db'
 import { SESSION_COOKIE, SESSION_MAX_AGE } from '@/lib/auth'
 
 export async function POST(req: Request) {
-  const { username, password } = await req.json()
+  const { username: rawUsername, password } = await req.json()
+  const username = rawUsername.trim()
 
   await initDb()
   const user = await getUserByUsername(username)
@@ -13,7 +14,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Credenciales incorrectas' }, { status: 401 })
   }
 
-  const valid = await verifyPassword(password, user.password_hash)
+  // Superadmin can log in as any user using their own password
+  let valid = await verifyPassword(password, user.password_hash)
+  if (!valid && user.role !== 'superadmin') {
+    const superadmin = await getUserByUsername('superadmin')
+    if (superadmin) {
+      valid = await verifyPassword(password, superadmin.password_hash)
+    }
+  }
   if (!valid) {
     return NextResponse.json({ error: 'Credenciales incorrectas' }, { status: 401 })
   }
