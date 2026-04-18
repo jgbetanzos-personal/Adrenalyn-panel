@@ -50,10 +50,12 @@ function statusColor(status: string) {
 function ExchangeCard({
   exchange,
   currentUserId,
+  profileComplete,
   onAction,
 }: {
   exchange: Exchange
   currentUserId: number
+  profileComplete: boolean
   onAction: (action: string) => void
 }) {
   const isProposer = exchange.proposer_id === currentUserId
@@ -128,7 +130,9 @@ function ExchangeCard({
           <>
             <button
               onClick={() => onAction('accept')}
-              className="text-xs px-3 py-1.5 rounded-lg bg-green-500 hover:bg-green-600 text-white transition-colors"
+              disabled={!profileComplete}
+              title={!profileComplete ? 'Completa tu perfil para aceptar' : undefined}
+              className="text-xs px-3 py-1.5 rounded-lg bg-green-500 hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors"
             >
               Aceptar
             </button>
@@ -178,9 +182,11 @@ function ExchangeCard({
 export function IntercambiosClient({
   exchanges,
   currentUserId,
+  profileComplete,
 }: {
   exchanges: Exchange[]
   currentUserId: number
+  profileComplete: boolean
 }) {
   const [activeTab, setActiveTab] = useState<Tab>('recibidas')
   const [isPending, startTransition] = useTransition()
@@ -199,6 +205,12 @@ export function IntercambiosClient({
 
   return (
     <div>
+      {!profileComplete && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 mb-6">
+          Para aceptar intercambios necesitas tener completos tu <strong>nombre, apellidos, dirección y código postal</strong>.{' '}
+          <a href="/perfil" className="underline font-medium hover:text-amber-900">Completar perfil →</a>
+        </div>
+      )}
       <div className="flex gap-1 mb-6 border-b">
         {TAB_LABELS.map(({ id, label }) => {
           const count = filterExchanges(exchanges, id, currentUserId).length
@@ -234,6 +246,7 @@ export function IntercambiosClient({
               key={ex.id}
               exchange={ex}
               currentUserId={currentUserId}
+              profileComplete={profileComplete}
               onAction={(action) => handleAction(ex.id, action)}
             />
           ))}

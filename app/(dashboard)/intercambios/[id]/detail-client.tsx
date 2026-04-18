@@ -130,9 +130,11 @@ function RateSection({
 export function ExchangeDetailClient({
   exchange,
   currentUserId,
+  profileComplete,
 }: {
   exchange: Exchange
   currentUserId: number
+  profileComplete: boolean
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -246,41 +248,49 @@ export function ExchangeDetailClient({
       )}
 
       {/* Actions */}
-      <div className="flex flex-wrap gap-2">
-        {exchange.status === 'pending' && !isProposer && (
-          <>
+      <div className="space-y-3">
+        {exchange.status === 'pending' && !isProposer && !profileComplete && (
+          <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+            Para aceptar este intercambio necesitas tener completos tu <strong>nombre, apellidos, dirección y código postal</strong>.{' '}
+            <a href="/perfil" className="underline font-medium hover:text-amber-900">Completar perfil →</a>
+          </div>
+        )}
+        <div className="flex flex-wrap gap-2">
+          {exchange.status === 'pending' && !isProposer && (
+            <>
+              <button
+                onClick={() => action('accept')}
+                disabled={!profileComplete}
+                title={!profileComplete ? 'Completa tu perfil para aceptar' : undefined}
+                className="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
+              >
+                Aceptar
+              </button>
+              <button
+                onClick={() => action('reject')}
+                className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-colors"
+              >
+                Rechazar
+              </button>
+            </>
+          )}
+          {exchange.status === 'accepted' && !mySent && (
             <button
-              onClick={() => action('accept')}
-              className="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white text-sm font-medium transition-colors"
+              onClick={() => action('mark-sent')}
+              className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium transition-colors"
             >
-              Aceptar
+              Marcar como enviado
             </button>
+          )}
+          {exchange.status === 'accepted' && mySent && !myReceived && (
             <button
-              onClick={() => action('reject')}
-              className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-colors"
+              onClick={() => action('mark-received')}
+              className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors"
             >
-              Rechazar
+              Marcar como recibido
             </button>
-          </>
-        )}
-
-        {exchange.status === 'accepted' && !mySent && (
-          <button
-            onClick={() => action('mark-sent')}
-            className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium transition-colors"
-          >
-            Marcar como enviado
-          </button>
-        )}
-
-        {exchange.status === 'accepted' && mySent && !myReceived && (
-          <button
-            onClick={() => action('mark-received')}
-            className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors"
-          >
-            Marcar como recibido
-          </button>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Rating */}

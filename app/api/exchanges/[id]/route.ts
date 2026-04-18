@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { getExchange, acceptExchange, rejectExchange, markSent, markReceived } from '@/lib/exchanges'
+import { getUserById } from '@/lib/users'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,9 +37,15 @@ export async function PATCH(
   const { action } = body
 
   switch (action) {
-    case 'accept':
+    case 'accept': {
+      const user = await getUserById(session.userId)
+      const complete = !!(user?.name?.trim() && user?.surname?.trim() && user?.address?.trim() && /^\d{5}$/.test(user?.postal_code?.trim() ?? ''))
+      if (!complete) {
+        return NextResponse.json({ error: 'Perfil incompleto. Añade nombre, apellidos, dirección y código postal.' }, { status: 422 })
+      }
       await acceptExchange(id, session.userId)
       break
+    }
     case 'reject':
       await rejectExchange(id, session.userId)
       break
